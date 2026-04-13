@@ -1,0 +1,74 @@
+<!-- Source of truth: docs/PRIVACY.md — keep in sync when editing -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Privacy Policy — AI Phishing Detector</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <nav class="nav">
+    <a href="index.html"><strong>Phishing Checker</strong></a>
+    <a href="privacy.html">Privacy Policy</a>
+    <a href="terms.html">Terms of Service</a>
+  </nav>
+
+  <h1>Privacy Policy — AI Phishing Detector</h1>
+  <p><em>Last updated: April 13, 2026</em></p>
+
+  <h2>Access Restriction</h2>
+  <p>This add-on is <strong>private and restricted to authorized users only</strong>. Access is controlled via an allowlist. If your Google account is not on the allowlist, the add-on will display an "Access Restricted" message and will not process any email data. To request access, contact the developer at the support link below.</p>
+
+  <h2>What This Add-on Does</h2>
+  <p>AI Phishing Detector is a Gmail™ add-on that analyzes emails you explicitly open and trigger for analysis. It checks for phishing indicators such as suspicious URLs, sender spoofing, urgency tactics, and grammar anomalies.</p>
+
+  <h2>Data We Access</h2>
+  <p>When you click <strong>Analyze for Phishing</strong>, the add-on reads the following from the currently open email:</p>
+  <ul>
+    <li>Sender name and email address</li>
+    <li>Email subject</li>
+    <li>Email body text (plain text only, up to 5,000 characters)</li>
+    <li>URLs found in the email body</li>
+    <li>SPF, DKIM, and DMARC authentication headers</li>
+    <li>Attachment filenames (not attachment contents)</li>
+  </ul>
+
+  <h2>Data We Do NOT Collect</h2>
+  <ul>
+    <li>We do <strong>not</strong> store, log, or transmit your email content to any server we operate.</li>
+    <li>We do <strong>not</strong> read emails you have not opened and triggered for analysis.</li>
+    <li>We do <strong>not</strong> share your data with third parties beyond the AI provider you configure.</li>
+  </ul>
+
+  <h2>Third-Party AI Providers</h2>
+  <p>Email content is sent to the AI provider you configure in Script Properties. You control which provider is used:</p>
+  <table>
+    <thead>
+      <tr><th>Provider</th><th>Privacy Policy</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Google Gemini™</td><td><a href="https://policies.google.com/privacy">policies.google.com/privacy</a></td></tr>
+      <tr><td>Google Vertex AI™</td><td><a href="https://cloud.google.com/terms/cloud-privacy-notice">cloud.google.com/terms/cloud-privacy-notice</a></td></tr>
+      <tr><td>Amazon Bedrock (Claude)</td><td><a href="https://aws.amazon.com/privacy/">aws.amazon.com/privacy</a></td></tr>
+      <tr><td>Azure OpenAI</td><td><a href="https://privacy.microsoft.com/privacystatement">privacy.microsoft.com/privacystatement</a></td></tr>
+    </tbody>
+  </table>
+  <p>You are responsible for reviewing the privacy policy of your chosen AI provider. Email data sent for analysis is subject to that provider's terms.</p>
+
+  <h2>API Keys and Credentials</h2>
+  <p>API keys are stored in Google Apps Script Script Properties, which are encrypted at rest by Google. Keys are never exposed in the add-on UI or logs.</p>
+
+  <h2>No Analytics or Tracking</h2>
+  <p>This add-on does not use any analytics, tracking pixels, or telemetry of any kind.</p>
+
+  <h2>Contact</h2>
+  <p>For questions or concerns, open an issue at:<br>
+  <a href="https://github.com/TilanTAB/AI-Phishing-Detector/issues">github.com/TilanTAB/AI-Phishing-Detector/issues</a></p>
+
+  <footer>
+    <p><a href="privacy.html">Privacy Policy</a> · <a href="terms.html">Terms of Service</a></p>
+    <p>Gmail™, Google Gemini™, and Google Vertex AI™ are trademarks of Google LLC.</p>
+  </footer>
+</body>
+</html>
