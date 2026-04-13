@@ -265,7 +265,7 @@ Create an empty file at `docs/.nojekyll`. This tells GitHub Pages not to process
   <h2>Supported AI Providers</h2>
   <ul>
     <li>Google Gemini™</li>
-    <li>Google Vertex AI</li>
+    <li>Google Vertex AI™</li>
     <li>Amazon Bedrock (Claude)</li>
     <li>Azure OpenAI</li>
   </ul>
@@ -278,7 +278,7 @@ Create an empty file at `docs/.nojekyll`. This tells GitHub Pages not to process
 
   <footer>
     <p><a href="privacy.html">Privacy Policy</a> · <a href="terms.html">Terms of Service</a></p>
-    <p>Gmail™ and Google Gemini™ are trademarks of Google LLC.</p>
+    <p>Gmail™, Google Gemini™, and Google Vertex AI™ are trademarks of Google LLC.</p>
   </footer>
 </body>
 </html>
@@ -303,6 +303,7 @@ git commit -m "Add GitHub Pages landing page"
 This is the HTML rendering of `docs/PRIVACY.md`. Content is identical; only the format changes.
 
 ```html
+<!-- Source of truth: docs/PRIVACY.md — keep in sync when editing -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -353,7 +354,7 @@ This is the HTML rendering of `docs/PRIVACY.md`. Content is identical; only the 
     </thead>
     <tbody>
       <tr><td>Google Gemini™</td><td><a href="https://policies.google.com/privacy">policies.google.com/privacy</a></td></tr>
-      <tr><td>Google Vertex AI</td><td><a href="https://cloud.google.com/terms/cloud-privacy-notice">cloud.google.com/terms/cloud-privacy-notice</a></td></tr>
+      <tr><td>Google Vertex AI™</td><td><a href="https://cloud.google.com/terms/cloud-privacy-notice">cloud.google.com/terms/cloud-privacy-notice</a></td></tr>
       <tr><td>Amazon Bedrock (Claude)</td><td><a href="https://aws.amazon.com/privacy/">aws.amazon.com/privacy</a></td></tr>
       <tr><td>Azure OpenAI</td><td><a href="https://privacy.microsoft.com/privacystatement">privacy.microsoft.com/privacystatement</a></td></tr>
     </tbody>
@@ -372,7 +373,7 @@ This is the HTML rendering of `docs/PRIVACY.md`. Content is identical; only the 
 
   <footer>
     <p><a href="privacy.html">Privacy Policy</a> · <a href="terms.html">Terms of Service</a></p>
-    <p>Gmail™ and Google Gemini™ are trademarks of Google LLC.</p>
+    <p>Gmail™, Google Gemini™, and Google Vertex AI™ are trademarks of Google LLC.</p>
   </footer>
 </body>
 </html>
@@ -395,6 +396,7 @@ git commit -m "Add Privacy Policy HTML page for GitHub Pages"
 - [ ] **Step 1: Create `docs/terms.html`**
 
 ```html
+<!-- Source of truth: docs/TERMS.md — keep in sync when editing -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -424,7 +426,7 @@ git commit -m "Add Privacy Policy HTML page for GitHub Pages"
 
   <h2>Your Responsibilities</h2>
   <ul>
-    <li>You must provide your own API credentials for the AI provider you choose (Google Gemini™, Amazon Bedrock, Azure OpenAI, or Google Vertex AI).</li>
+    <li>You must provide your own API credentials for the AI provider you choose (Google Gemini™, Amazon Bedrock, Azure OpenAI, or Google Vertex AI™).</li>
     <li>You are responsible for any costs incurred with your chosen AI provider.</li>
     <li>You must comply with the terms of service of your chosen AI provider.</li>
     <li>You must not use this add-on for any unlawful purpose.</li>
@@ -450,7 +452,7 @@ git commit -m "Add Privacy Policy HTML page for GitHub Pages"
 
   <footer>
     <p><a href="privacy.html">Privacy Policy</a> · <a href="terms.html">Terms of Service</a></p>
-    <p>Gmail™ and Google Gemini™ are trademarks of Google LLC.</p>
+    <p>Gmail™, Google Gemini™, and Google Vertex AI™ are trademarks of Google LLC.</p>
   </footer>
 </body>
 </html>
@@ -465,12 +467,26 @@ git commit -m "Add Terms of Service HTML page for GitHub Pages"
 
 ---
 
-### Task 7: Update MARKETPLACE_LISTING.md with Final URLs
+### Task 7: Update MARKETPLACE_LISTING.md — Fix ™ and URLs
 
 **Files:**
-- Modify: `docs/MARKETPLACE_LISTING.md:47-48`
+- Modify: `docs/MARKETPLACE_LISTING.md:21,47-48,50`
 
-- [ ] **Step 1: Replace placeholder URLs**
+- [ ] **Step 1: Fix missing ™ on Google product names**
+
+In `docs/MARKETPLACE_LISTING.md` line 21, replace:
+
+```
+(Google Gemini, Google Vertex AI, Amazon Bedrock Claude, or Azure OpenAI)
+```
+
+With:
+
+```
+(Google Gemini™, Google Vertex AI™, Amazon Bedrock Claude, or Azure OpenAI)
+```
+
+- [ ] **Step 2: Replace placeholder URLs**
 
 In `docs/MARKETPLACE_LISTING.md`, replace:
 
@@ -486,16 +502,30 @@ With:
 - Terms of Service: https://tilantab.github.io/AI-Phishing-Detector/terms.html
 ```
 
-- [ ] **Step 2: Commit**
+- [ ] **Step 3: Update trademark footnote**
+
+In `docs/MARKETPLACE_LISTING.md` line 50, replace:
+
+```
+Gmail is a trademark of Google LLC.
+```
+
+With:
+
+```
+Gmail™, Google Gemini™, and Google Vertex AI™ are trademarks of Google LLC.
+```
+
+- [ ] **Step 4: Commit**
 
 ```bash
 git add docs/MARKETPLACE_LISTING.md
-git commit -m "Update MARKETPLACE_LISTING.md with GitHub Pages URLs"
+git commit -m "Fix ™ attribution and update URLs in MARKETPLACE_LISTING.md"
 ```
 
 ---
 
-### Task 8: Deploy to Apps Script and Push
+### Task 8: Deploy to Apps Script, Merge to Main, and Push
 
 - [ ] **Step 1: Push add-on changes via clasp**
 
@@ -506,11 +536,23 @@ clasp push --force
 
 Expected: `Pushed N files.`
 
-- [ ] **Step 2: Push all commits to remote**
+- [ ] **Step 2: Push feature branch to remote**
 
 ```bash
 cd D:/AIProjects/PhishingChecker
 git push origin feature/outlook-addin
+```
+
+- [ ] **Step 3: Merge into main so GitHub Pages can deploy**
+
+GitHub Pages deploys from `main` branch `/docs` folder. The HTML files won't be visible until merged.
+
+```bash
+cd D:/AIProjects/PhishingChecker
+git checkout main
+git merge feature/outlook-addin
+git push origin main
+git checkout feature/outlook-addin
 ```
 
 ---
@@ -559,13 +601,15 @@ Save.
 
 Go to: Marketplace SDK → Store Listing
 
+**Important:** The Marketplace SDK description fields may not render Markdown. When pasting, strip Markdown syntax: remove `**bold**` markers, `###` headers, and `- ` list prefixes. Convert to plain text or use the field's own formatting tools if available.
+
 **Short description** — paste from `MARKETPLACE_LISTING.md` "Short Description" section:
 
 ```
 AI-powered phishing detection for Gmail™. Click "Analyze for Phishing" on any open email and get an instant verdict (Safe / Suspicious / Phishing) with a risk score, red-flag breakdown, and one-click labeling.
 ```
 
-**Detailed description** — paste the entire "Detailed Description" section from `MARKETPLACE_LISTING.md` (from "**Phishing Checker** is an open-source..." through "Gmail is a trademark of Google LLC.").
+**Detailed description** — paste the entire "Detailed Description" section from `MARKETPLACE_LISTING.md` (from "Phishing Checker is an open-source..." through "Gmail™, Google Gemini™, and Google Vertex AI™ are trademarks of Google LLC."). Strip Markdown formatting before pasting.
 
 - [ ] **Step 5: Update developer URLs**
 
