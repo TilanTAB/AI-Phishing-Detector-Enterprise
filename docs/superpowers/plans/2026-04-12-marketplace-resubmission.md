@@ -536,23 +536,15 @@ clasp push --force
 
 Expected: `Pushed N files.`
 
-- [ ] **Step 2: Push feature branch to remote**
-
-```bash
-cd D:/AIProjects/PhishingChecker
-git push origin feature/outlook-addin
-```
-
-- [ ] **Step 3: Merge into main so GitHub Pages can deploy**
+- [ ] **Step 2: Merge into main so GitHub Pages can deploy**
 
 GitHub Pages deploys from `main` branch `/docs` folder. The HTML files won't be visible until merged.
 
 ```bash
 cd D:/AIProjects/PhishingChecker
 git checkout main
-git merge feature/outlook-addin
+git merge fix/marketplace-resubmission
 git push origin main
-git checkout feature/outlook-addin
 ```
 
 ---
