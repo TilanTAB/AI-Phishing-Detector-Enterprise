@@ -21,6 +21,9 @@ token.json
 # Application state
 history_state.json
 
+# Node
+node_modules/
+
 # IDE
 .vscode/
 .idea/

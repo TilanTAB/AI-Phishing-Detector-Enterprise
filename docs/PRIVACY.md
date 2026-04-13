@@ -8,7 +8,7 @@ This add-on is **private and restricted to authorized users only**. Access is co
 
 ## What This Add-on Does
 
-AI Phishing Detector is a Gmail add-on that analyzes emails you explicitly open and trigger for analysis. It checks for phishing indicators such as suspicious URLs, sender spoofing, urgency tactics, and grammar anomalies.
+AI Phishing Detector is a Gmail™ add-on that analyzes emails you explicitly open and trigger for analysis. It checks for phishing indicators such as suspicious URLs, sender spoofing, urgency tactics, and grammar anomalies.
 
 ## Data We Access
 
