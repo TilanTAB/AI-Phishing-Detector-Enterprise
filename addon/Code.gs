@@ -132,48 +132,6 @@ function analyzeEmailAction(e) {
   }
 }
 
-/**
- * Card action — triggered when user clicks "Apply Label".
- * Applies the PHISHING_DETECTED or SUSPICIOUS label to the email thread.
- *
- * @param {Object} e - Action event with e.parameters.messageId and e.parameters.verdict
- * @returns {ActionResponse}
- */
-function applyLabelAction(e) {
-  if (!isAllowedUser()) {
-    return CardService.newActionResponseBuilder()
-      .setNotification(CardService.newNotification().setText('Access denied.'))
-      .build();
-  }
-
-  var messageId = e.parameters && e.parameters.messageId;
-  var verdict   = e.parameters && e.parameters.verdict;
-
-  if (!messageId || !verdict) {
-    return CardService.newActionResponseBuilder()
-      .setNotification(CardService.newNotification().setText('Error: Missing parameters.'))
-      .build();
-  }
-
-  try {
-    applyLabel(messageId, verdict);
-
-    var labelName = verdict === 'phishing' ? 'PHISHING_DETECTED' : 'SUSPICIOUS';
-    return CardService.newActionResponseBuilder()
-      .setNotification(
-        CardService.newNotification().setText('✅ Label "' + labelName + '" applied successfully.')
-      )
-      .build();
-
-  } catch (err) {
-    console.error('applyLabelAction error: ' + err.message);
-    return CardService.newActionResponseBuilder()
-      .setNotification(
-        CardService.newNotification().setText('Failed to apply label: ' + err.message)
-      )
-      .build();
-  }
-}
 
 /**
  * Helper to safely get provider name for logging without throwing.

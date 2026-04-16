@@ -48,8 +48,7 @@ var SEVERITY_ICONS = Object.freeze({
  * @returns {Card}
  */
 function buildHomeCard(emailData, messageId) {
-  var provider   = _safeGetProvider();
-  var alreadyDone = isAlreadyLabeled(messageId);
+  var provider = _safeGetProvider();
 
   var card = CardService.newCardBuilder()
     .setHeader(CardService.newCardHeader()
@@ -99,16 +98,9 @@ function buildHomeCard(emailData, messageId) {
   // Action section
   var actionSection = CardService.newCardSection();
 
-  if (alreadyDone) {
-    actionSection.addWidget(
-      CardService.newTextParagraph()
-        .setText('<font color="#888888"><i>This email has already been labeled.</i></font>')
-    );
-  }
-
   actionSection.addWidget(
     CardService.newTextButton()
-      .setText(alreadyDone ? '🔍 Re-Analyze' : '🔍 Analyze for Phishing')
+      .setText('🔍 Analyze for Phishing')
       .setOnClickAction(
         CardService.newAction()
           .setFunctionName('analyzeEmailAction')
@@ -184,22 +176,7 @@ function buildResultsCard(result, messageId) {
   // Action section — label button + back button
   var actionSection = CardService.newCardSection();
 
-  if (result.verdict !== 'safe') {
-    var labelText = result.verdict === 'phishing'
-      ? '🏷 Apply PHISHING Label'
-      : '🏷 Apply SUSPICIOUS Label';
-
-    actionSection.addWidget(
-      CardService.newTextButton()
-        .setText(labelText)
-        .setOnClickAction(
-          CardService.newAction()
-            .setFunctionName('applyLabelAction')
-            .setParameters({ messageId: messageId, verdict: result.verdict })
-        )
-        .setTextButtonStyle(CardService.TextButtonStyle.FILLED)
-    );
-  } else {
+  if (result.verdict === 'safe') {
     actionSection.addWidget(
       CardService.newTextParagraph()
         .setText('<font color="#2da44e">✅ This email appears safe. No action needed.</font>')

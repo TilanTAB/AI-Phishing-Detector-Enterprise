@@ -1,17 +1,8 @@
 /**
  * GmailHelper.gs
- * Extracts structured email data from a Gmail message ID,
- * and manages phishing-related Gmail labels.
+ * Extracts structured email data from a Gmail message ID.
  */
 
-var LABEL_PHISHING   = 'PHISHING_DETECTED';
-var LABEL_SUSPICIOUS = 'SUSPICIOUS';
-
-// Label color definitions
-var LABEL_COLORS = Object.freeze({
-  PHISHING_DETECTED: { backgroundColor: '#cc3a21', textColor: '#ffffff' },
-  SUSPICIOUS:        { backgroundColor: '#ff9900', textColor: '#000000' }
-});
 
 /**
  * Extracts all relevant phishing-analysis fields from a Gmail message.
@@ -104,61 +95,3 @@ function getEmailData(messageId) {
   };
 }
 
-/**
- * Applies the appropriate Gmail label based on the verdict.
- * Creates labels if they don't exist yet.
- *
- * @param {string} messageId
- * @param {string} verdict - 'phishing' | 'suspicious'
- */
-function applyLabel(messageId, verdict) {
-  var labelName = (verdict === 'phishing') ? LABEL_PHISHING : LABEL_SUSPICIOUS;
-  var label = ensureLabel(labelName);
-  var message = GmailApp.getMessageById(messageId);
-  if (message) {
-    message.getThread().addLabel(label);
-    console.log('Applied label "' + labelName + '" to message ' + messageId);
-  }
-}
-
-/**
- * Ensures a Gmail label exists with the correct color, creating it if needed.
- * Returns the GmailLabel object.
- *
- * @param {string} labelName
- * @returns {GmailLabel}
- */
-function ensureLabel(labelName) {
-  var label = GmailApp.getUserLabelByName(labelName);
-  if (!label) {
-    label = GmailApp.createLabel(labelName);
-    console.log('Created Gmail label: ' + labelName);
-    // Note: GmailApp.createLabel() doesn't support color assignment.
-    // Label colors require the Gmail REST API (gmail.labels.patch).
-    // Color is set as a nice-to-have via Gmail REST in Code.gs startup,
-    // but the add-on functions correctly without it.
-  }
-  return label;
-}
-
-/**
- * Returns true if the message already has the phishing or suspicious label applied.
- * Used by Card.gs to decide whether to show the "Apply Label" button.
- *
- * @param {string} messageId
- * @returns {boolean}
- */
-function isAlreadyLabeled(messageId) {
-  try {
-    var message = GmailApp.getMessageById(messageId);
-    var thread  = message.getThread();
-    var labels  = thread.getLabels();
-    for (var i = 0; i < labels.length; i++) {
-      var name = labels[i].getName();
-      if (name === LABEL_PHISHING || name === LABEL_SUSPICIOUS) return true;
-    }
-  } catch (e) {
-    console.warn('isAlreadyLabeled error: ' + e.message);
-  }
-  return false;
-}
