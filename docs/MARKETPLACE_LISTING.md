@@ -6,7 +6,7 @@ Paste these into the Marketplace SDK → Store Listing tab.
 
 ## Short Description (max ~220 chars)
 
-AI-powered phishing detection for Gmail™. Click "Analyze for Phishing" on any open email and get an instant verdict (Safe / Suspicious / Phishing) with a risk score, red-flag breakdown, and one-click labeling.
+AI-powered phishing detection for Gmail™. Click "Analyze for Phishing" on any open email and get an instant verdict (Safe / Suspicious / Phishing) with a risk score, red-flag breakdown, and detailed assessment.
 
 ---
 
@@ -24,7 +24,7 @@ AI-powered phishing detection for Gmail™. Click "Analyze for Phishing" on any 
    - A **verdict badge**: SAFE, SUSPICIOUS, or PHISHING DETECTED
    - A **plain-English assessment** of why
    - A **red-flag list** with severity (high / medium / low) covering URL spoofing, sender spoofing, urgency tactics, credential-harvest patterns, grammar anomalies, and authentication failures
-5. If the verdict is suspicious or phishing, click one button to apply a Gmail™ label so you can triage later.
+5. Use the verdict and red-flag breakdown to decide how to handle the email.
 
 ### Key features
 

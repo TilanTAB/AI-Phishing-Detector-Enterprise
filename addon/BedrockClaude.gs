@@ -1,15 +1,24 @@
 /**
  * BedrockClaude.gs
- * Phishing analysis using Amazon Bedrock Claude via AWS Sig V4 signed requests.
+ * Phishing analysis using Amazon Bedrock Claude.
  *
- * Required Script Properties:
- *   AWS_ACCESS_KEY_ID     — IAM access key
- *   AWS_SECRET_ACCESS_KEY — IAM secret key
- *   AWS_REGION            — e.g. "us-east-1"
- *   BEDROCK_MODEL_ID      — e.g. "anthropic.claude-3-5-sonnet-20241022-v2:0"
+ * Supports TWO authentication methods (BEDROCK_API_KEY takes precedence if both are set):
+ *
+ *   1. Bedrock API key (recommended — simpler, bearer token):
+ *      BEDROCK_API_KEY  — Bedrock API key from AWS Console → Bedrock → API keys
+ *
+ *   2. IAM access key (legacy — SigV4 signed request):
+ *      AWS_ACCESS_KEY_ID     — IAM access key
+ *      AWS_SECRET_ACCESS_KEY — IAM secret key
+ *
+ * Always required:
+ *   AWS_REGION       — e.g. "us-east-1"
+ *   BEDROCK_MODEL_ID — e.g. "anthropic.claude-3-5-sonnet-20241022-v2:0"
  *
  * AWS Sig V4 implementation validated against:
  * https://docs.aws.amazon.com/general/latest/gr/signature-v4-test-suite.html
+ * Bedrock API key reference:
+ * https://docs.aws.amazon.com/bedrock/latest/userguide/api-keys.html
  */
 
 /**
@@ -19,14 +28,14 @@
  * @returns {Object} PhishingResult from Models.parseAnalysis()
  */
 function bedrockClaudeAnalyze(emailData) {
-  var accessKeyId     = getProp('AWS_ACCESS_KEY_ID');
-  var secretAccessKey = getProp('AWS_SECRET_ACCESS_KEY');
-  var region          = getProp('AWS_REGION') || 'us-east-1';
-  var modelId         = getProp('BEDROCK_MODEL_ID') || 'anthropic.claude-3-5-sonnet-20241022-v2:0';
+  var apiKey  = getProp('BEDROCK_API_KEY');
+  var region  = getProp('AWS_REGION') || 'us-east-1';
+  var modelId = getProp('BEDROCK_MODEL_ID') || 'anthropic.claude-3-5-sonnet-20241022-v2:0';
 
   var host    = 'bedrock-runtime.' + region + '.amazonaws.com';
   var path    = '/model/' + encodeURIComponent(modelId) + '/invoke';
   var service = 'bedrock';
+  var url     = 'https://' + host + path;
 
   var body = JSON.stringify({
     anthropic_version: 'bedrock-2023-05-31',
@@ -38,14 +47,31 @@ function bedrockClaudeAnalyze(emailData) {
     ]
   });
 
-  console.log('BedrockClaude: calling model=' + modelId + ' for message ' + emailData.messageId);
+  // Pick auth method. API key wins if both are configured.
+  var headers;
+  if (apiKey) {
+    console.log('BedrockClaude: using Bedrock API key auth, model=' + modelId + ' for message ' + emailData.messageId);
+    headers = {
+      'Authorization': 'Bearer ' + apiKey,
+      'Content-Type': 'application/json'
+    };
+  } else {
+    var accessKeyId     = getProp('AWS_ACCESS_KEY_ID');
+    var secretAccessKey = getProp('AWS_SECRET_ACCESS_KEY');
+    if (!accessKeyId || !secretAccessKey) {
+      throw new Error(
+        'BedrockClaude: no auth credentials configured. Set either ' +
+        'BEDROCK_API_KEY (recommended) OR ' +
+        'AWS_ACCESS_KEY_ID + AWS_SECRET_ACCESS_KEY in Script Properties.'
+      );
+    }
+    console.log('BedrockClaude: using SigV4 IAM auth, model=' + modelId + ' for message ' + emailData.messageId);
+    headers = _buildSig4Headers(
+      accessKeyId, secretAccessKey, region, service,
+      host, path, body
+    );
+  }
 
-  var headers = _buildSig4Headers(
-    accessKeyId, secretAccessKey, region, service,
-    host, path, body
-  );
-
-  var url    = 'https://' + host + path;
   var result = httpFetch(url, {
     method: 'post',
     headers: headers,
@@ -239,5 +265,53 @@ function testAwsCredentials() {
     console.log('✅ AWS credentials are VALID!\nResponse:\n' + result.text);
   } else {
     console.error('❌ AWS credentials validation FAILED:\n' + result.text);
+  }
+}
+
+
+// ---------------------------------------------------------------------------
+// Bedrock API Key Validation (Direct Bearer-Auth Smoke Test)
+// ---------------------------------------------------------------------------
+
+/**
+ * Validates BEDROCK_API_KEY by making a small Bedrock invocation.
+ * Run from Apps Script editor: testBedrockApiKey()
+ *
+ * @returns {void} Logs the result or error to console
+ */
+function testBedrockApiKey() {
+  var apiKey  = getProp('BEDROCK_API_KEY');
+  var region  = getProp('AWS_REGION') || 'us-east-1';
+  var modelId = getProp('BEDROCK_MODEL_ID') || 'anthropic.claude-3-5-sonnet-20241022-v2:0';
+
+  if (!apiKey) {
+    console.error('❌ BEDROCK_API_KEY is not set in Script Properties.');
+    return;
+  }
+
+  var url = 'https://bedrock-runtime.' + region + '.amazonaws.com/model/' +
+            encodeURIComponent(modelId) + '/invoke';
+
+  var body = JSON.stringify({
+    anthropic_version: 'bedrock-2023-05-31',
+    max_tokens: 16,
+    messages: [{ role: 'user', content: 'Say only the word OK.' }]
+  });
+
+  var result = httpFetch(url, {
+    method: 'post',
+    headers: {
+      'Authorization': 'Bearer ' + apiKey,
+      'Content-Type': 'application/json'
+    },
+    payload: body,
+    muteHttpExceptions: true
+  });
+
+  if (result.ok) {
+    console.log('✅ Bedrock API key is VALID!\nResponse:\n' + result.text.substring(0, 500));
+  } else {
+    console.error('❌ Bedrock API key validation FAILED (status=' + result.status + '):\n' +
+                  result.text.substring(0, 1000));
   }
 }

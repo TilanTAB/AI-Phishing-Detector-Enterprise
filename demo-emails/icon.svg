@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Shield body -->
+  <path d="M256 28 L460 120 C460 120 470 320 256 488 C42 320 52 120 52 120 Z"
+        fill="#1a73e8" stroke="#1557b0" stroke-width="8" stroke-linejoin="round"/>
+
+  <!-- Inner shield highlight -->
+  <path d="M256 60 L430 140 C430 140 438 310 256 456 C74 310 82 140 82 140 Z"
+        fill="#4285f4" stroke="none"/>
+
+  <!-- Fishing hook: eye ring (top) + shank + curve + barb (tip) -->
+  <g fill="none" stroke="#ffffff" stroke-linecap="round" stroke-linejoin="round">
+    <!-- Eye ring (the distinctive ring at top of the hook) -->
+    <circle cx="275" cy="135" r="26" stroke-width="16"/>
+
+    <!-- Main hook body: shank (vertical) + bend (J-curve) -->
+    <path d="M275 161 L275 290 C275 355 215 365 180 335 C150 310 150 270 180 252"
+          stroke-width="26"/>
+
+    <!-- Barb (sharp triangular flag pointing outward/up from the tip) -->
+    <path d="M180 252 L220 232 L215 282 Z"
+          fill="#ffffff" stroke="#ffffff" stroke-width="4" stroke-linejoin="round"/>
+  </g>
+
+  <!-- Red prohibition circle + diagonal line (over the hook) -->
+  <circle cx="256" cy="256" r="160" fill="none" stroke="#ea4335" stroke-width="26" opacity="0.92"/>
+  <line x1="143" y1="143" x2="369" y2="369" stroke="#ea4335" stroke-width="26" stroke-linecap="round" opacity="0.92"/>
+</svg>

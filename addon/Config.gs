@@ -9,10 +9,13 @@
 // Immutable provider list
 var VALID_PROVIDERS = Object.freeze(['azure_openai', 'bedrock_claude', 'gemini', 'vertex_ai']);
 
-// Required Script Properties per provider (only non-secret ones surfaced in UI)
+// Required Script Properties per provider (only non-secret ones surfaced in UI).
+// bedrock_claude has dual auth support: either BEDROCK_API_KEY (recommended) OR
+// AWS_ACCESS_KEY_ID + AWS_SECRET_ACCESS_KEY (legacy IAM SigV4). Auth-key validation
+// is performed in validateConfig() since it's an either/or check, not a strict list.
 var PROVIDER_REQUIRED_KEYS = Object.freeze({
   azure_openai:  ['AZURE_ENDPOINT', 'AZURE_API_KEY', 'AZURE_DEPLOYMENT', 'AZURE_API_VERSION'],
-  bedrock_claude: ['AWS_ACCESS_KEY_ID', 'AWS_SECRET_ACCESS_KEY', 'AWS_REGION', 'BEDROCK_MODEL_ID'],
+  bedrock_claude: ['AWS_REGION', 'BEDROCK_MODEL_ID'],
   gemini:        ['GEMINI_API_KEY', 'GEMINI_MODEL'],
   vertex_ai:     ['VERTEX_PROJECT_ID', 'VERTEX_LOCATION', 'VERTEX_MODEL']
   // Note: vertex_ai uses ScriptApp.getOAuthToken() — no service account key needed
@@ -115,6 +118,20 @@ function validateConfig(provider) {
       missing.join('\n  ') +
       '\n\nGo to: Apps Script Editor → Project Settings → Script Properties'
     );
+  }
+
+  // bedrock_claude: either BEDROCK_API_KEY (recommended) OR AWS_ACCESS_KEY_ID + AWS_SECRET_ACCESS_KEY (legacy IAM).
+  if (provider === 'bedrock_claude') {
+    var hasApiKey = !!allProps['BEDROCK_API_KEY'];
+    var hasIamPair = !!allProps['AWS_ACCESS_KEY_ID'] && !!allProps['AWS_SECRET_ACCESS_KEY'];
+    if (!hasApiKey && !hasIamPair) {
+      throw new Error(
+        'BedrockClaude: no auth credentials configured. Set either:\n' +
+        '  • BEDROCK_API_KEY (recommended — simpler bearer token), OR\n' +
+        '  • AWS_ACCESS_KEY_ID + AWS_SECRET_ACCESS_KEY (legacy IAM SigV4)\n\n' +
+        'Go to: Apps Script Editor → Project Settings → Script Properties'
+      );
+    }
   }
 }
 

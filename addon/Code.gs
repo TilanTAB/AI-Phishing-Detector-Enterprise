@@ -26,7 +26,8 @@ function onGmailMessage(e) {
       return buildErrorCard('No message context found. Please open an email first.');
     }
 
-    var emailData = getEmailData(messageId);
+    var accessToken = e && e.gmail && e.gmail.accessToken;
+    var emailData = getEmailData(messageId, accessToken);
     return buildHomeCard(emailData, messageId);
 
   } catch (err) {
@@ -102,8 +103,9 @@ function analyzeEmailAction(e) {
   }
 
   try {
-    // Fetch email data
-    var emailData = getEmailData(messageId);
+    // Fetch email data — pass access token for addon-scoped getMessageById
+    var accessToken = e && e.gmail && e.gmail.accessToken;
+    var emailData = getEmailData(messageId, accessToken);
 
     // Run AI analysis (one-shot, no retry — must finish within timeout)
     var result = analyzeWithAI(emailData);

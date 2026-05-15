@@ -6,7 +6,9 @@
 
 /**
  * Extracts all relevant phishing-analysis fields from a Gmail message.
- * Uses GmailApp.getMessageById() to get full message including raw headers.
+ * Uses GmailApp.getMessageById() with getHeader() for header-only access
+ * (compatible with gmail.addons.current.message.metadata sensitive scope —
+ * avoids the restricted gmail.readonly scope and its raw-content read).
  *
  * @param {string} messageId - Gmail message ID from the add-on event
  * @returns {{
@@ -25,7 +27,13 @@
  *   dmarc: string
  * }}
  */
-function getEmailData(messageId) {
+function getEmailData(messageId, accessToken) {
+  // When using addon-scoped scopes (without broader gmail.readonly),
+  // the current-message access token must be set before GmailApp.getMessageById.
+  // Per Google docs: GmailApp.setCurrentMessageAccessToken(e.gmail.accessToken).
+  if (accessToken) {
+    GmailApp.setCurrentMessageAccessToken(accessToken);
+  }
   var message = GmailApp.getMessageById(messageId);
   if (!message) {
     throw new Error('Message not found: ' + messageId);
@@ -34,27 +42,30 @@ function getEmailData(messageId) {
   // Parse sender
   var from = parseEmailAddress(message.getFrom());
 
-  // Get reply-to (GmailApp doesn't expose it directly; fall back to sender)
+  // Get reply-to and authentication headers via getHeader()
+  // — works with addon-scoped scopes for the current message; no raw content read.
   var replyTo = '';
+  var spf = 'unknown', dkim = 'unknown', dmarc = 'unknown';
+  var authHeader = '';
   try {
-    var rawContent = message.getRawContent();
-    var replyToMatch = rawContent.match(/^Reply-To:\s*(.+)$/mi);
-    if (replyToMatch) {
-      var rt = parseEmailAddress(replyToMatch[1].trim());
+    var replyToHeader = message.getHeader('Reply-To');
+    if (replyToHeader) {
+      var rt = parseEmailAddress(replyToHeader);
       replyTo = rt.email || rt.name;
     }
-    // Extract authentication headers from raw content
-    var authHeader = '';
-    var authMatch = rawContent.match(/^Authentication-Results:[\s\S]*?(?=\n\S|\n\n)/mi);
-    if (authMatch) authHeader = authMatch[0];
-
-    var spf  = extractAuthResult(authHeader, 'spf');
-    var dkim = extractAuthResult(authHeader, 'dkim');
-    var dmarc = extractAuthResult(authHeader, 'dmarc');
+    authHeader = message.getHeader('Authentication-Results') || '';
+    spf  = extractAuthResult(authHeader, 'spf');
+    dkim = extractAuthResult(authHeader, 'dkim');
+    dmarc = extractAuthResult(authHeader, 'dmarc');
   } catch (e) {
-    // getRawContent() may fail under some scope configurations — degrade gracefully
-    console.warn('Could not read raw content for message ' + messageId + ': ' + e.message);
-    var spf = 'unknown', dkim = 'unknown', dmarc = 'unknown';
+    // getHeader() may fail under tighter scopes; degrade gracefully.
+    console.warn('Could not read headers for message ' + messageId + ': ' + e.message);
+  }
+  // Diagnostic logging — verify metadata scope exposes Authentication-Results.
+  console.log('Header read: replyTo="' + replyTo + '" auth_header_chars=' + authHeader.length +
+              ' spf=' + spf + ' dkim=' + dkim + ' dmarc=' + dmarc);
+  if (authHeader.length > 0) {
+    console.log('Auth-Results sample (first 200 chars): ' + authHeader.substring(0, 200));
   }
 
   // Get body — prefer plain text, fall back to HTML-to-text

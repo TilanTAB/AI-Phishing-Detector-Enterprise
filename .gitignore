@@ -44,3 +44,6 @@ htmlcov/
 
 # Logs
 *.log
+
+# Abandoned Outlook port — not pursued for this release
+outlook-addin/
