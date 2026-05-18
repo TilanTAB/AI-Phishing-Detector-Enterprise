@@ -67,11 +67,6 @@ function buildAddOn(e) {
             'Results are shown instantly in this sidebar.'
           )
       )
-      .addWidget(
-        CardService.newTextButton()
-          .setText('⚙ Configure Provider')
-          .setOnClickAction(CardService.newAction().setFunctionName('buildSettingsCard'))
-      )
   );
 
   return card.build();
