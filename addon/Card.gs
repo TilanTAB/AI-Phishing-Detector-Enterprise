@@ -284,24 +284,21 @@ function buildSettingsCard() {
   });
   card.addSection(configSection);
 
-  // How to configure
-  var helpSection = CardService.newCardSection().setHeader('How to Configure');
-  helpSection.addWidget(
+  // About — clarifies that configuration is developer-administered, not user-editable.
+  var aboutSection = CardService.newCardSection().setHeader('About this configuration');
+  aboutSection.addWidget(
     CardService.newTextParagraph()
       .setText(
-        '1. Open Apps Script Editor (Extensions → Apps Script)\n' +
-        '2. Click Project Settings (⚙ icon)\n' +
-        '3. Scroll to <b>Script Properties</b>\n' +
-        '4. Set <b>AI_PROVIDER</b> to one of:\n' +
-        '   • gemini\n' +
-        '   • azure_openai\n' +
-        '   • bedrock_claude\n' +
-        '   • vertex_ai\n' +
-        '5. Set the required credentials for your chosen provider\n' +
-        '6. Set <b>TEST_MODE=true</b> to test the UI without real API calls'
+        'The AI provider, model, and credentials are administered by the developer. ' +
+        'All allowlisted users share a single configuration; per-user keys are not supported.\n\n' +
+        'To request a change of provider or model, contact the developer at ' +
+        '<b>tilan.bethmage@gmail.com</b>.\n\n' +
+        'For setup instructions (only relevant if you have forked or are running your own ' +
+        'instance of this add-on), see the project README at ' +
+        '<a href="https://github.com/TilanTAB/AI-Phishing-Detector">github.com/TilanTAB/AI-Phishing-Detector</a>.'
       )
   );
-  card.addSection(helpSection);
+  card.addSection(aboutSection);
 
   return card.build();
 }
