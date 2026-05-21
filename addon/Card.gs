@@ -141,7 +141,7 @@ function buildResultsCard(result, messageId) {
           CardService.newTextParagraph()
             .setText('<font color="#cc3a21"><b>⚠ Analysis Failed</b></font><br>' +
               '<font color="#555">' + _escape(result.error || 'Unknown error') + '</font><br><br>' +
-              'Email labeled as SUSPICIOUS for manual review.')
+              'Treat this email as SUSPICIOUS for manual review.')
         )
     );
   }
@@ -173,7 +173,7 @@ function buildResultsCard(result, messageId) {
     card.addSection(flagSection);
   }
 
-  // Action section — label button + back button
+  // Action section
   var actionSection = CardService.newCardSection();
 
   if (result.verdict === 'safe') {
@@ -205,6 +205,8 @@ function buildResultsCard(result, messageId) {
  * @returns {Card}
  */
 function buildAccessDeniedCard() {
+  var userEmail = getCurrentUserEmail() || 'unknown user';
+
   return CardService.newCardBuilder()
     .setHeader(CardService.newCardHeader()
       .setTitle('🔒 Access Restricted')
@@ -214,7 +216,7 @@ function buildAccessDeniedCard() {
         .addWidget(
           CardService.newTextParagraph()
             .setText(
-              'Your account (<b>' + Session.getActiveUser().getEmail() + '</b>) ' +
+              'Your account (<b>' + _escape(userEmail) + '</b>) ' +
               'is not authorised to use this add-on.\n\n' +
               'Contact the owner to request access.'
             )

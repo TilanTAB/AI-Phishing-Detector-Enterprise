@@ -32,7 +32,6 @@ Open Email in Gmail
   → Click "Analyze This Email"
   → AI analyzes sender / URLs / content / auth headers
   → Results card: Verdict · Score · Red Flags · Confidence
-  → Optional: Apply PHISHING or SUSPICIOUS label
 ```
 
 ### Python Backend (Automatic Mode)
@@ -139,6 +138,7 @@ Script Properties are the add-on's environment variables — they hold your API 
 | Property | Value | Description |
 |---|---|---|
 | `AI_PROVIDER` | `gemini` | Active AI provider. Options: `azure_openai`, `bedrock_claude`, `gemini`, `vertex_ai` |
+| `ALLOWED_USERS` | `you@example.com` | Comma-separated allowlist. Required for this private add-on; unknown or unlisted users are denied. |
 
 #### Azure OpenAI Provider
 
@@ -182,7 +182,6 @@ Script Properties are the add-on's environment variables — they hold your API 
 | Property | Default | Description |
 |---|---|---|
 | `TEST_MODE` | `false` | Set to `true` to return a mock result without calling any AI API (useful for UI testing) |
-| `ANALYSIS_TIMEOUT_SECONDS` | `25` | Max seconds to wait for AI response (5–28, must stay under Apps Script's 30s limit) |
 
 ![Script Properties Screenshot](docs/screenshots/script_properties.png)
 
@@ -190,7 +189,7 @@ Script Properties are the add-on's environment variables — they hold your API 
 
 1. In the Apps Script Editor, click **Deploy → Test deployments**
 2. Under **Gmail Add-on**, click **Install**
-3. Authorize the requested permissions (Gmail read, labels, external requests)
+3. Authorize the requested permissions (Gmail current-message read, external requests, and user email)
 4. Open Gmail — you should see the **Phishing Checker** shield icon in the right sidebar
 
 ### Step 7: Analyze Your First Email
@@ -203,7 +202,6 @@ Script Properties are the add-on's environment variables — they hold your API 
    - **Score**: 0–100
    - **Confidence**: how certain the AI is
    - **Red Flags**: specific issues detected (category, severity, description)
-5. Optionally click **Apply Label** to tag the email in Gmail
 
 ---
 
@@ -424,7 +422,7 @@ AI-Phishing-Detector/
 │   ├── BedrockClaude.gs            # Amazon Bedrock + AWS Sig V4 signing
 │   ├── GeminiAI.gs                 # Gemini API REST implementation
 │   ├── VertexAI.gs                 # Vertex AI (uses OAuth token, no svc account)
-│   ├── GmailHelper.gs              # Email fetch, raw header parsing, label helpers
+│   ├── GmailHelper.gs              # Email fetch, header parsing, URL extraction
 │   ├── Models.gs                   # JSON response parsing + PhishingAnalysis model
 │   ├── Prompt.gs                   # System prompt + user prompt builder
 │   ├── Utils.gs                    # HMAC-SHA256, HTTP fetch, URL extraction
@@ -510,7 +508,7 @@ Expected output: **37 tests passing**.
 | Symptom | Fix |
 |---|---|
 | "Missing Script Properties" error | Go to Project Settings → Script Properties, add all required keys for your provider |
-| Analysis times out | Increase `ANALYSIS_TIMEOUT_SECONDS` or switch to a faster model (Haiku, Gemini Flash) |
+| Analysis times out | Switch to a faster model (Haiku, Gemini Flash) or reduce prompt size; Apps Script controls the card-action runtime limit |
 | Bedrock HTTP 400 "inference profile" error | Use inference profile ID format: `us.anthropic.claude-...` instead of bare model ID |
 | Add-on not appearing in Gmail | In Apps Script Editor → Deploy → Test deployments → Install the Gmail Add-on |
 

@@ -55,7 +55,7 @@ function azureOpenAIAnalyze(emailData) {
                  response.choices[0].message.content;
 
   if (!content) {
-    throw new Error('Azure OpenAI returned empty content. Response: ' + result.text.substring(0, 300));
+    throw new Error('Azure OpenAI returned empty content.');
   }
 
   return parseAnalysis(content);

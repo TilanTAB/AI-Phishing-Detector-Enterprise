@@ -18,8 +18,7 @@ var VALID_VERDICTS    = Object.freeze(['safe', 'suspicious', 'phishing']);
  * @throws {Error} If JSON is invalid or required fields are missing/invalid
  */
 function parseAnalysis(rawText) {
-  // Log full response to Cloud Logging for debugging
-  console.log('AI raw response (' + rawText.length + ' chars): ' + rawText.substring(0, 500));
+  console.log('AI response received (' + rawText.length + ' chars).');
 
   var text = rawText.trim();
 
@@ -30,7 +29,7 @@ function parseAnalysis(rawText) {
   var lastBrace  = text.lastIndexOf('}');
 
   if (firstBrace === -1 || lastBrace <= firstBrace) {
-    throw new Error('No JSON object found in AI response. Got: ' + text.substring(0, 200));
+    throw new Error('No JSON object found in AI response.');
   }
 
   text = text.substring(firstBrace, lastBrace + 1);
@@ -39,17 +38,26 @@ function parseAnalysis(rawText) {
   try {
     data = JSON.parse(text);
   } catch (e) {
-    throw new Error('AI returned invalid JSON: ' + e.message + '. Extracted: ' + text.substring(0, 300));
+    throw new Error('AI returned invalid JSON: ' + sanitizeLogValue(e.message));
   }
 
   // --- Validate score ---
   if (typeof data.score !== 'number' || data.score < 0 || data.score > 100) {
     throw new Error('Invalid or missing "score" (expected integer 0-100). Got: ' + data.score);
   }
+  var score = Math.round(data.score);
 
   // --- Validate verdict ---
   if (VALID_VERDICTS.indexOf(data.verdict) === -1) {
     throw new Error('Invalid "verdict": "' + data.verdict + '". Expected: safe | suspicious | phishing');
+  }
+  var derivedVerdict = verdictFromScore(score);
+  if (data.verdict !== derivedVerdict) {
+    console.warn(
+      'AI verdict mismatch corrected: score=' + score +
+      ' model_verdict=' + sanitizeLogValue(data.verdict) +
+      ' derived_verdict=' + derivedVerdict
+    );
   }
 
   // --- Validate reasoning ---
@@ -72,8 +80,8 @@ function parseAnalysis(rawText) {
     : 0.5;
 
   return {
-    score:      Math.round(data.score),
-    verdict:    data.verdict,
+    score:      score,
+    verdict:    derivedVerdict,
     reasoning:  data.reasoning.trim(),
     redFlags:   redFlags,
     confidence: confidence,
@@ -90,7 +98,8 @@ function parseAnalysis(rawText) {
  * @returns {Object}
  */
 function fallbackResult(errorMessage) {
-  console.error('AI analysis fallback triggered: ' + errorMessage);
+  var safeError = sanitizeLogValue(errorMessage).substring(0, 160);
+  console.error('AI analysis fallback triggered: ' + safeError);
   return {
     score:      50,
     verdict:    'suspicious',
@@ -98,6 +107,17 @@ function fallbackResult(errorMessage) {
     redFlags:   [],
     confidence: 0.0,
     isFallback: true,
-    error:      errorMessage
+    error:      safeError
   };
+}
+
+/**
+ * Derives the verdict from the local score thresholds.
+ * @param {number} score
+ * @returns {string}
+ */
+function verdictFromScore(score) {
+  if (score <= 30) return 'safe';
+  if (score <= 65) return 'suspicious';
+  return 'phishing';
 }

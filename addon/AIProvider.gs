@@ -52,7 +52,7 @@ function analyzeWithAI(emailData) {
         return fallbackResult('Unknown provider: ' + provider);
     }
   } catch (e) {
-    console.error('AIProvider error for provider=' + provider + ': ' + e.message);
+    console.error('AIProvider error for provider=' + provider + ': ' + sanitizeLogValue(e.message));
     return fallbackResult(e.message);
   }
 }

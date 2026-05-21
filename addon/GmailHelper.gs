@@ -59,23 +59,35 @@ function getEmailData(messageId, accessToken) {
     dmarc = extractAuthResult(authHeader, 'dmarc');
   } catch (e) {
     // getHeader() may fail under tighter scopes; degrade gracefully.
-    console.warn('Could not read headers for message ' + messageId + ': ' + e.message);
+    console.warn('Could not read headers for message ' + messageId + ': ' + sanitizeLogValue(e.message));
   }
   // Diagnostic logging — verify metadata scope exposes Authentication-Results.
   console.log('Header read: replyTo="' + replyTo + '" auth_header_chars=' + authHeader.length +
               ' spf=' + spf + ' dkim=' + dkim + ' dmarc=' + dmarc);
-  if (authHeader.length > 0) {
-    console.log('Auth-Results sample (first 200 chars): ' + authHeader.substring(0, 200));
-  }
 
   // Get body — prefer plain text, fall back to HTML-to-text
-  var body = message.getPlainBody();
-  if (!body || body.trim().length === 0) {
-    body = htmlToText(message.getBody());
+  var plainBody = '';
+  var htmlBody = '';
+  try {
+    plainBody = message.getPlainBody() || '';
+  } catch (e) {
+    console.warn('Could not read plain body for message ' + messageId + ': ' + sanitizeLogValue(e.message));
+  }
+  try {
+    htmlBody = message.getBody() || '';
+  } catch (e) {
+    console.warn('Could not read HTML body for message ' + messageId + ': ' + sanitizeLogValue(e.message));
   }
 
+  var htmlText = htmlToText(htmlBody);
+  var body = plainBody && plainBody.trim().length > 0 ? plainBody : htmlText;
+
   // Extract URLs from body
-  var urls = extractUrls(body);
+  var urls = dedupeUrls(
+    extractUrls(plainBody)
+      .concat(extractUrls(htmlText))
+      .concat(extractUrlsFromHtml(htmlBody))
+  );
 
   // Extract attachment names
   var attachments = [];
@@ -84,7 +96,7 @@ function getEmailData(messageId, accessToken) {
       attachments.push(att.getName());
     });
   } catch (e) {
-    console.warn('Could not read attachments: ' + e.message);
+    console.warn('Could not read attachments: ' + sanitizeLogValue(e.message));
   }
 
   console.log('getEmailData: id=' + messageId + ' from=' + from.email + ' urls=' + urls.length);
@@ -105,4 +117,3 @@ function getEmailData(messageId, accessToken) {
     dmarc:       dmarc || 'unknown'
   };
 }
-

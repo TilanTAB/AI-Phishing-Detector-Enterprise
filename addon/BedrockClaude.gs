@@ -80,7 +80,6 @@ function bedrockClaudeAnalyze(emailData) {
   });
 
   if (!result.ok) {
-    console.error('Bedrock full error response: ' + result.text.substring(0, 2000));
     throw new Error('Bedrock Claude error: ' + result.error);
   }
 
@@ -95,7 +94,7 @@ function bedrockClaudeAnalyze(emailData) {
   }
 
   if (!textContent) {
-    throw new Error('Bedrock Claude returned empty content. Response: ' + result.text.substring(0, 300));
+    throw new Error('Bedrock Claude returned empty content.');
   }
 
   return parseAnalysis(textContent);
@@ -140,9 +139,6 @@ function _buildSig4Headers(accessKeyId, secretAccessKey, region, service, host, 
     return seg ? encodeURIComponent(seg) : seg;
   }).join('/');
 
-  console.log('SigV4 DEBUG path (URL):      ' + path);
-  console.log('SigV4 DEBUG canonicalURI:     ' + canonicalURI);
-
   var canonicalRequest = [
     'POST',
     canonicalURI,
@@ -151,8 +147,6 @@ function _buildSig4Headers(accessKeyId, secretAccessKey, region, service, host, 
     signedHeaders,
     payloadHash
   ].join('\n');
-
-  console.log('SigV4 DEBUG canonicalRequest:\n' + canonicalRequest);
 
   // --- Step 2: String to Sign ---
   var credentialScope = dateStamp + '/' + region + '/' + service + '/aws4_request';
@@ -163,8 +157,6 @@ function _buildSig4Headers(accessKeyId, secretAccessKey, region, service, host, 
     sha256Hex(canonicalRequest)
   ].join('\n');
 
-  console.log('SigV4 DEBUG stringToSign:\n' + stringToSign);
-
   // --- Step 3: Derive Signing Key ---
   // Chain: HMAC(HMAC(HMAC(HMAC("AWS4" + secret, date), region), service), "aws4_request")
   // Each step uses raw bytes output as key for the next step.
@@ -173,12 +165,8 @@ function _buildSig4Headers(accessKeyId, secretAccessKey, region, service, host, 
   var kService = hmacSha256Bytes(kRegion, service);
   var kSigning = hmacSha256Bytes(kService, 'aws4_request');
 
-  console.log('SigV4 DEBUG kDate hex: ' + bytesToHex(kDate));
-  console.log('SigV4 DEBUG kSigning hex: ' + bytesToHex(kSigning));
-
   // --- Step 4: Compute Signature ---
   var signature = hmacSha256Hex(kSigning, stringToSign);
-  console.log('SigV4 DEBUG signature: ' + signature);
 
   // --- Step 5: Build Authorization Header ---
   var authorization =
@@ -262,9 +250,9 @@ function testAwsCredentials() {
   });
 
   if (result.ok) {
-    console.log('✅ AWS credentials are VALID!\nResponse:\n' + result.text);
+    console.log('AWS credentials are valid.');
   } else {
-    console.error('❌ AWS credentials validation FAILED:\n' + result.text);
+    console.error('AWS credentials validation failed: ' + sanitizeLogValue(result.text).substring(0, 300));
   }
 }
 
@@ -285,7 +273,7 @@ function testBedrockApiKey() {
   var modelId = getProp('BEDROCK_MODEL_ID') || 'anthropic.claude-3-5-sonnet-20241022-v2:0';
 
   if (!apiKey) {
-    console.error('❌ BEDROCK_API_KEY is not set in Script Properties.');
+    console.error('BEDROCK_API_KEY is not set in Script Properties.');
     return;
   }
 
@@ -309,9 +297,9 @@ function testBedrockApiKey() {
   });
 
   if (result.ok) {
-    console.log('✅ Bedrock API key is VALID!\nResponse:\n' + result.text.substring(0, 500));
+    console.log('Bedrock API key is valid.');
   } else {
-    console.error('❌ Bedrock API key validation FAILED (status=' + result.status + '):\n' +
-                  result.text.substring(0, 1000));
+    console.error('Bedrock API key validation failed (status=' + result.status + '): ' +
+                  sanitizeLogValue(result.text).substring(0, 300));
   }
 }
