@@ -175,7 +175,7 @@ Script Properties are the add-on's environment variables — they hold your API 
 | `VERTEX_LOCATION` | `us-central1` | Region |
 | `VERTEX_MODEL` | `gemini-1.5-pro` | Model name |
 
-> **Note:** Vertex AI uses `ScriptApp.getOAuthToken()` for authentication — no service account key needed, as long as the add-on is running under a Google account with Vertex AI access. It requires the `https://www.googleapis.com/auth/cloud-platform` OAuth scope, so users must reauthorize after enabling Vertex AI support.
+> **Note:** Vertex AI uses `ScriptApp.getOAuthToken()` for authentication — no service account key needed, as long as the add-on is running under a Google account with Vertex AI access.
 
 #### Optional Properties
 
@@ -189,7 +189,7 @@ Script Properties are the add-on's environment variables — they hold your API 
 
 1. In the Apps Script Editor, click **Deploy → Test deployments**
 2. Under **Gmail Add-on**, click **Install**
-3. Authorize the requested permissions (Gmail current-message read, external requests, user email, and Cloud Platform if using Vertex AI)
+3. Authorize the requested permissions (Gmail current-message read, external requests, and user email)
 4. Open Gmail — you should see the **Phishing Checker** shield icon in the right sidebar
 
 ### Step 7: Analyze Your First Email
@@ -370,7 +370,7 @@ Now any incoming email is analyzed automatically. Phishing emails get labeled + 
 | Provider | Best For | Notes |
 |---|---|---|
 | **Gemini API** | Quick start, free tier | Get key at [aistudio.google.com](https://aistudio.google.com). Add-on default. |
-| **Vertex AI** | GCP-native, no API key mgmt | Requires GCP project with Vertex AI enabled. Uses your Google OAuth token and the Cloud Platform OAuth scope. |
+| **Vertex AI** | GCP-native, no API key mgmt | Requires GCP project with Vertex AI enabled. Uses your Google OAuth token. |
 | **Azure OpenAI** | GPT-4o quality | Requires Azure subscription + deployed model. |
 | **Amazon Bedrock Claude** | Claude quality, AWS-native | Requires IAM user + Bedrock model access. Use inference profile IDs for Claude 4.x (`us.anthropic.claude-...`). |
 
@@ -497,7 +497,7 @@ Expected output: **37 tests passing**.
 - Use a strong random string for `PUBSUB_VERIFICATION_TOKEN`
 - For production AWS, prefer IAM roles over long-lived access keys
 - For production webhook, use a proper TLS certificate (not ngrok)
-- The Vertex AI provider uses `ScriptApp.getOAuthToken()` (short-lived OAuth token) — no long-lived service account key stored anywhere, but it does require the Cloud Platform OAuth scope
+- The Vertex AI provider uses `ScriptApp.getOAuthToken()` (short-lived OAuth token) — no long-lived service account key stored anywhere
 
 ---
 
