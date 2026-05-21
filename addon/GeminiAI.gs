@@ -58,7 +58,7 @@ function geminiAnalyze(emailData) {
                  response.candidates[0].content.parts[0].text;
 
   if (!content) {
-    throw new Error('Gemini returned empty content. Full response: ' + result.text.substring(0, 300));
+    throw new Error('Gemini returned empty content.');
   }
 
   return parseAnalysis(content);

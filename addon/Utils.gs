@@ -15,19 +15,63 @@ function extractUrls(text) {
   if (!text) return [];
   var urlRegex = /https?:\/\/[^\s<>"'\)\]]+/gi;
   var matches = text.match(urlRegex) || [];
+  return dedupeUrls(matches);
+}
 
-  // Deduplicate while preserving order
+/**
+ * Extracts HTTP/HTTPS URLs from HTML href attributes.
+ * @param {string} html
+ * @returns {string[]}
+ */
+function extractUrlsFromHtml(html) {
+  if (!html) return [];
+
+  var urls = [];
+  var hrefRegex = /\bhref\s*=\s*(?:"([^"]+)"|'([^']+)'|([^\s>]+))/gi;
+  var match;
+  while ((match = hrefRegex.exec(html)) !== null) {
+    var href = decodeHtmlEntities(match[1] || match[2] || match[3] || '');
+    if (/^https?:\/\//i.test(href)) {
+      urls.push(href);
+    }
+  }
+
+  return dedupeUrls(urls);
+}
+
+/**
+ * Deduplicates URLs while preserving order and enforcing prompt caps.
+ * @param {string[]} urls
+ * @returns {string[]}
+ */
+function dedupeUrls(urls) {
   var seen = {};
   var unique = [];
-  matches.forEach(function(url) {
+  (urls || []).forEach(function(url) {
     // Strip trailing punctuation that may have been captured
-    url = url.replace(/[.,;:!?)]+$/, '');
+    url = String(url || '').replace(/[.,;:!?)]+$/, '');
+    if (!url) return;
     if (!seen[url]) {
       seen[url] = true;
       unique.push(url.substring(0, 200));
     }
   });
   return unique.slice(0, 30);
+}
+
+/**
+ * Decodes the limited HTML entities that commonly appear in href attributes.
+ * @param {string} text
+ * @returns {string}
+ */
+function decodeHtmlEntities(text) {
+  if (!text) return '';
+  return String(text)
+    .replace(/&amp;/gi, '&')
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>')
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;/g, "'");
 }
 
 /**
@@ -89,17 +133,34 @@ function htmlToText(html) {
 }
 
 /**
- * Makes a JSON HTTP request via UrlFetchApp with a deadline.
+ * Makes a JSON HTTP request via UrlFetchApp.
  * Always returns {ok: boolean, status: number, text: string, error: string|null}.
  * Never throws — callers check the .ok field.
  *
  * @param {string} url
  * @param {Object} options - UrlFetchApp options (method, headers, payload, etc.)
- * @param {number} timeoutSeconds - Max seconds to wait (default: from Config)
  * @returns {{ok: boolean, status: number, text: string, error: string|null}}
  */
-function httpFetch(url, options, timeoutSeconds) {
-  var deadline = timeoutSeconds || getTimeoutSeconds();
+function sanitizeLogValue(value) {
+  if (value === null || value === undefined) return '';
+
+  var text = String(value);
+  text = text.replace(/([?&](?:key|api_key|token|access_token|code|signature|sig)=)[^&\s]+/gi, '$1[REDACTED]');
+  text = text.replace(/(Authorization:\s*(?:Bearer|AWS4-HMAC-SHA256)\s+)[^\s,]+/gi, '$1[REDACTED]');
+  text = text.replace(/((?:api-key|x-api-key|Authorization)\s*[:=]\s*)[^\s,;}]+/gi, '$1[REDACTED]');
+  text = text.replace(/(Credential=)[^,\s]+/gi, '$1[REDACTED]');
+  text = text.replace(/(Signature=)[^,\s]+/gi, '$1[REDACTED]');
+  text = text.replace(/(AWS_SECRET_ACCESS_KEY|BEDROCK_API_KEY|GEMINI_API_KEY|AZURE_API_KEY)(["'\s:=]+)[^"'\s,;}]+/gi, '$1$2[REDACTED]');
+
+  return text;
+}
+
+function sanitizeUrlForLog(url) {
+  if (!url) return '';
+  return sanitizeLogValue(String(url).replace(/\?.*$/, '?[REDACTED]'));
+}
+
+function httpFetch(url, options) {
   options = options || {};
   options.muteHttpExceptions = true; // Never throw on HTTP errors
 
@@ -108,16 +169,18 @@ function httpFetch(url, options, timeoutSeconds) {
     response = UrlFetchApp.fetch(url, options);
   } catch (e) {
     // Network-level error (DNS failure, connection refused, timeout)
-    console.error('UrlFetchApp error for ' + url + ': ' + e.message);
-    return { ok: false, status: 0, text: '', error: e.message };
+    var networkError = sanitizeLogValue(e.message);
+    console.error('UrlFetchApp error for ' + sanitizeUrlForLog(url) + ': ' + networkError);
+    return { ok: false, status: 0, text: '', error: networkError };
   }
 
   var status = response.getResponseCode();
   var text   = response.getContentText();
 
   if (status < 200 || status >= 300) {
-    console.error('HTTP ' + status + ' from ' + url + ': ' + text.substring(0, 300));
-    return { ok: false, status: status, text: text, error: 'HTTP ' + status + ': ' + text.substring(0, 200) };
+    var safeBody = sanitizeLogValue(text).substring(0, 160);
+    console.error('HTTP ' + status + ' from ' + sanitizeUrlForLog(url) + ': ' + safeBody);
+    return { ok: false, status: status, text: text, error: 'HTTP ' + status + ': ' + safeBody };
   }
 
   return { ok: true, status: status, text: text, error: null };
@@ -217,4 +280,3 @@ function hmacSha256Bytes(key, message) {
 function hmacSha256Hex(key, message) {
   return bytesToHex(hmacSha256Bytes(key, message));
 }
-

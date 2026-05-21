@@ -62,13 +62,13 @@ function getProvider() {
  * Returns true if the current user is permitted to use the add-on.
  *
  * Reads ALLOWED_USERS from Script Properties (comma-separated emails).
- * If not set or empty, allows all users (default).
+ * If not set or empty, denies all users.
  *
  * @returns {boolean}
  */
 function isAllowedUser() {
-  var currentUser = Session.getActiveUser().getEmail().toLowerCase().trim();
-  if (!currentUser) return true; // Can't determine user (e.g. time-based trigger)
+  var currentUser = getCurrentUserEmail();
+  if (!currentUser) return false;
 
   var allowedList = getProp('ALLOWED_USERS');
   if (allowedList && allowedList.trim() !== '') {
@@ -77,10 +77,21 @@ function isAllowedUser() {
     });
   }
 
-  // Not configured: allow all
-  return true;
+  return false;
 }
 
+/**
+ * Returns the active user's email address, or an empty string if unavailable.
+ * @returns {string}
+ */
+function getCurrentUserEmail() {
+  try {
+    return (Session.getActiveUser().getEmail() || '').toLowerCase().trim();
+  } catch (e) {
+    console.warn('Could not determine active user: ' + sanitizeLogValue(e.message));
+    return '';
+  }
+}
 
 /**
  * Returns true if TEST_MODE=true is set in Script Properties.
@@ -90,16 +101,6 @@ function isAllowedUser() {
  */
 function isTestMode() {
   return getProp('TEST_MODE') === 'true';
-}
-
-/**
- * Returns the analysis timeout in seconds. Defaults to 25.
- * Kept below Apps Script's 30s card action limit.
- * @returns {number}
- */
-function getTimeoutSeconds() {
-  var val = parseInt(getProp('ANALYSIS_TIMEOUT_SECONDS'), 10);
-  return (isNaN(val) || val < 5 || val > 28) ? 25 : val;
 }
 
 /**

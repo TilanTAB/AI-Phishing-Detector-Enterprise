@@ -6,7 +6,6 @@
  *   onGmailMessage(e)      — contextual trigger when email is opened
  *   buildAddOn(e)          — homepage trigger (no email context)
  *   analyzeEmailAction(e)  — card action: run AI analysis
- *   applyLabelAction(e)    — card action: apply Gmail label
  *   buildSettingsCard(e)   — universal action: show settings
  */
 
@@ -31,8 +30,8 @@ function onGmailMessage(e) {
     return buildHomeCard(emailData, messageId);
 
   } catch (err) {
-    console.error('onGmailMessage error: ' + err.message);
-    return buildErrorCard('Failed to load email: ' + err.message);
+    console.error('onGmailMessage error: ' + sanitizeLogValue(err.message));
+    return buildErrorCard('Failed to load email: ' + sanitizeLogValue(err.message));
   }
 }
 
@@ -76,8 +75,8 @@ function buildAddOn(e) {
  * Card action — triggered when user clicks "Analyze for Phishing".
  * Fetches full email data, runs AI analysis, and pushes the results card.
  *
- * NOTE: This must complete within ~30 seconds (Apps Script card action limit).
- * AI analysis is one-shot with no retries to stay within this budget.
+ * NOTE: This must complete within Apps Script's card action runtime budget.
+ * AI analysis is one-shot with no retries to stay within that budget.
  *
  * @param {Object} e - Action event with e.parameters.messageId
  * @returns {ActionResponse}
@@ -102,7 +101,7 @@ function analyzeEmailAction(e) {
     var accessToken = e && e.gmail && e.gmail.accessToken;
     var emailData = getEmailData(messageId, accessToken);
 
-    // Run AI analysis (one-shot, no retry — must finish within timeout)
+    // Run AI analysis (one-shot, no retry).
     var result = analyzeWithAI(emailData);
 
     console.log(
@@ -120,10 +119,10 @@ function analyzeEmailAction(e) {
       .build();
 
   } catch (err) {
-    console.error('analyzeEmailAction error for ' + messageId + ': ' + err.message);
+    console.error('analyzeEmailAction error for ' + messageId + ': ' + sanitizeLogValue(err.message));
     return CardService.newActionResponseBuilder()
       .setNavigation(
-        CardService.newNavigation().pushCard(buildErrorCard('Analysis failed: ' + err.message, messageId))
+        CardService.newNavigation().pushCard(buildErrorCard('Analysis failed: ' + sanitizeLogValue(err.message), messageId))
       )
       .build();
   }
