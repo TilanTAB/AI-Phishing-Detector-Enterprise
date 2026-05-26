@@ -1,70 +1,63 @@
-# AI Phishing Detector
+# AI Phishing Detector — Gmail Add-on
 
-Real-time Gmail phishing detection powered by AI. Two complementary modes:
+A Gmail sidebar add-on that uses AI to analyze any open email for phishing indicators and shows a verdict (SAFE / SUSPICIOUS / PHISHING) with a score, confidence, and a list of red flags.
 
-- **Gmail Add-on** — a sidebar card you trigger manually on any open email
-- **Python Backend** — automated background monitor that watches your inbox via Google Cloud Pub/Sub and acts automatically
+The add-on runs entirely inside Google Apps Script — no server, no Python, no cloud infrastructure to host.
 
-Supports **4 AI providers** switchable by config: Azure OpenAI, Amazon Bedrock Claude, Google Gemini API, and Google Vertex AI.
+Supports **4 AI providers** switchable by config: Google Gemini, Google Vertex AI, Amazon Bedrock Claude, and Azure OpenAI.
 
 ---
 
 ## Table of Contents
 
 1. [How It Works](#how-it-works)
-2. [Gmail Add-on — Setup Guide](#gmail-add-on-setup-guide)
-3. [Python Backend — Setup Guide](#python-backend-setup-guide)
-4. [AI Provider Configuration](#ai-provider-configuration)
-5. [Phishing Score Reference](#phishing-score-reference)
-6. [Project Structure](#project-structure)
-7. [Running Tests](#running-tests)
-8. [Security Notes](#security-notes)
+2. [Setup Guide](#setup-guide)
+3. [AI Provider Configuration](#ai-provider-configuration)
+4. [Phishing Score Reference](#phishing-score-reference)
+5. [Project Structure](#project-structure)
+6. [Security Notes](#security-notes)
+7. [Troubleshooting](#troubleshooting)
 
 ---
 
 ## How It Works
 
-### Gmail Add-on (Manual Mode)
-
 ```
 Open Email in Gmail
   → Click "Phishing Checker" sidebar icon
-  → Click "Analyze This Email"
+  → Click "Analyze for Phishing"
   → AI analyzes sender / URLs / content / auth headers
   → Results card: Verdict · Score · Red Flags · Confidence
 ```
 
-### Python Backend (Automatic Mode)
+The add-on inspects:
 
-```
-New Email Arrives → Gmail → Cloud Pub/Sub Push Notification
-  → Flask Webhook → Gmail API (fetch full email)
-  → Parser (sender, URLs, SPF/DKIM/DMARC, attachments)
-  → AI Analysis (6 dimensions)
-  → Label email (PHISHING_DETECTED / SUSPICIOUS)
-  → Send warning email to yourself
-```
+- Sender legitimacy (domain reputation, spoofing indicators)
+- SPF / DKIM / DMARC authentication headers
+- URLs (redirects, lookalike domains, suspicious TLDs)
+- Urgency and manipulation tactics
+- Grammar and language anomalies
+- Impersonation indicators (brand or executive spoofing)
+- Attachment risk signals
 
 ---
 
 ## Screenshots
 
-### Gmail Add-on — Analysis Results
-
 ![Phishing Checker Results Card](docs/screenshots/phishing.png)
 
-> The sidebar shows a **SAFE** verdict (Score 25/100, Confidence 92%) with assessment details and flagged red flags for a CodePen newsletter email. Results include SPF/DKIM/DMARC authentication status, URL analysis, and a plain-English explanation.
+> The sidebar shows the verdict, score, confidence, assessment summary, and a list of detected red flags grouped by severity.
 
 ---
 
-## Gmail Add-on — Setup Guide
+## Setup Guide
 
-The Gmail Add-on runs entirely inside Google Apps Script — no server, no Python, no cloud infrastructure needed. You configure it once via Script Properties and it works for any email you open in Gmail.
+The add-on is meant to be deployed by a developer once. End users on the allowlist do not need to install or configure anything — they just need to be added to `ALLOWED_USERS`.
 
 ### Prerequisites
 
 - A Google account (Gmail)
-- [Node.js](https://nodejs.org) (for `clasp` CLI)
+- [Node.js](https://nodejs.org) (for the `clasp` CLI)
 - One AI provider credential (see [AI Provider Configuration](#ai-provider-configuration))
 
 ### Step 1: Install clasp
@@ -81,24 +74,24 @@ clasp login
 ### Step 2: Clone This Repo
 
 ```bash
-git clone https://github.com/TilanTAB/AI-Phsishing-Detector.git
-cd AI-Phsishing-Detector
+git clone https://github.com/TilanTAB/AI-Phishing-Detector.git
+cd AI-Phishing-Detector
 ```
 
 ### Step 3: Create an Apps Script Project
 
 1. Go to [script.google.com](https://script.google.com)
 2. Click **New Project**
-3. Click the project title (top-left, currently "Untitled project") and rename it to **Phishing Checker**
+3. Rename the project to **Phishing Checker**
 4. Copy the **Script ID** from the URL: `https://script.google.com/home/projects/SCRIPT_ID_HERE/edit`
 
-Now link your local clone to this project:
+Link your local clone to that project:
 
 ```bash
 cd addon
 ```
 
-Edit `addon/.clasp.json` and replace the `scriptId` value:
+Edit `addon/.clasp.json` and set the `scriptId`:
 
 ```json
 {
@@ -114,20 +107,19 @@ cd addon
 npx clasp push
 ```
 
-You should see all 13 files uploaded:
+You should see all source files uploaded:
 
 ```
-Pushed 13 files.
-└─ AIProvider.gs   └─ AzureOpenAI.gs   └─ BedrockClaude.gs
-└─ Card.gs         └─ Code.gs          └─ Config.gs
-└─ GeminiAI.gs     └─ GmailHelper.gs   └─ Models.gs
-└─ Prompt.gs       └─ Utils.gs         └─ VertexAI.gs
-└─ appsscript.json
+AIProvider.gs   AzureOpenAI.gs   BedrockClaude.gs
+Card.gs         Code.gs          Config.gs
+GeminiAI.gs     GmailHelper.gs   Models.gs
+Prompt.gs       Utils.gs         VertexAI.gs
+appsscript.json
 ```
 
 ### Step 5: Configure Script Properties
 
-Script Properties are the add-on's environment variables — they hold your API keys and provider selection. **Never hardcode secrets in the source files.**
+Script Properties are the add-on's environment variables — they hold your API keys, the active provider, and the user allowlist. **Never hardcode secrets in the source files.**
 
 1. In the Apps Script Editor, click the gear icon (**Project Settings**)
 2. Scroll down to **Script Properties**
@@ -138,27 +130,7 @@ Script Properties are the add-on's environment variables — they hold your API 
 | Property | Value | Description |
 |---|---|---|
 | `AI_PROVIDER` | `gemini` | Active AI provider. Options: `azure_openai`, `bedrock_claude`, `gemini`, `vertex_ai` |
-| `ALLOWED_USERS` | `you@example.com` | Comma-separated allowlist. Required for this private add-on; unknown or unlisted users are denied. |
-
-#### Azure OpenAI Provider
-
-| Property | Example Value | Description |
-|---|---|---|
-| `AZURE_ENDPOINT` | `https://my-resource.openai.azure.com/` | Your Azure OpenAI resource endpoint |
-| `AZURE_API_KEY` | `abc123...` | API key from Azure Portal |
-| `AZURE_DEPLOYMENT` | `gpt-4o` | Deployed model name |
-| `AZURE_API_VERSION` | `2024-10-21` | API version |
-
-#### Amazon Bedrock Claude Provider
-
-| Property | Example Value | Description |
-|---|---|---|
-| `AWS_ACCESS_KEY_ID` | `AKIA...` | IAM user access key |
-| `AWS_SECRET_ACCESS_KEY` | `abc123...` | IAM user secret key |
-| `AWS_REGION` | `us-east-1` | AWS region where Bedrock is enabled |
-| `BEDROCK_MODEL_ID` | `us.anthropic.claude-haiku-4-5-20251001-v1:0` | Inference profile ID (must use `us.` prefix for Claude 4.x) |
-
-> **Important:** Claude 4.x models on Bedrock require an **inference profile ID**, not the bare model ID. Use `us.anthropic.claude-...` format.
+| `ALLOWED_USERS` | `you@example.com` | Comma-separated allowlist. Required — unlisted users get an access-denied card. |
 
 #### Google Gemini API Provider
 
@@ -175,7 +147,39 @@ Script Properties are the add-on's environment variables — they hold your API 
 | `VERTEX_LOCATION` | `us-central1` | Region |
 | `VERTEX_MODEL` | `gemini-1.5-pro` | Model name |
 
-> **Note:** Vertex AI uses `ScriptApp.getOAuthToken()` for authentication — no service account key needed, as long as the add-on is running under a Google account with Vertex AI access.
+> **Note:** Vertex AI uses `ScriptApp.getOAuthToken()` for authentication — no service-account key is stored. The OAuth scope is restricted to what Apps Script grants by default.
+
+#### Amazon Bedrock Claude Provider
+
+Two auth modes are supported. **Bedrock API key takes precedence** if both are set.
+
+**Mode A — Bedrock API key (recommended):**
+
+| Property | Example Value | Description |
+|---|---|---|
+| `BEDROCK_API_KEY` | `bedrock-...` | Bedrock API key from AWS Console → Bedrock → API keys |
+| `AWS_REGION` | `us-east-1` | AWS region where Bedrock is enabled |
+| `BEDROCK_MODEL_ID` | `us.anthropic.claude-haiku-4-5-20251001-v1:0` | Inference profile ID |
+
+**Mode B — IAM SigV4 (legacy):**
+
+| Property | Example Value | Description |
+|---|---|---|
+| `AWS_ACCESS_KEY_ID` | `AKIA...` | IAM user access key |
+| `AWS_SECRET_ACCESS_KEY` | `abc123...` | IAM user secret key |
+| `AWS_REGION` | `us-east-1` | AWS region |
+| `BEDROCK_MODEL_ID` | `us.anthropic.claude-haiku-4-5-20251001-v1:0` | Inference profile ID |
+
+> **Important:** Claude 4.x models on Bedrock require an **inference profile ID**, not the bare model ID. Use the `us.anthropic.claude-...` format.
+
+#### Azure OpenAI Provider
+
+| Property | Example Value | Description |
+|---|---|---|
+| `AZURE_ENDPOINT` | `https://my-resource.openai.azure.com/` | Your Azure OpenAI resource endpoint |
+| `AZURE_API_KEY` | `abc123...` | API key from Azure Portal |
+| `AZURE_DEPLOYMENT` | `gpt-4o` | Deployed model name |
+| `AZURE_API_VERSION` | `2024-10-21` | API version |
 
 #### Optional Properties
 
@@ -183,177 +187,19 @@ Script Properties are the add-on's environment variables — they hold your API 
 |---|---|---|
 | `TEST_MODE` | `false` | Set to `true` to return a mock result without calling any AI API (useful for UI testing) |
 
-![Script Properties Screenshot](docs/screenshots/script_properties.png)
-
 ### Step 6: Deploy as Gmail Add-on
 
 1. In the Apps Script Editor, click **Deploy → Test deployments**
 2. Under **Gmail Add-on**, click **Install**
-3. Authorize the requested permissions (Gmail current-message read, external requests, and user email)
-4. Open Gmail — you should see the **Phishing Checker** shield icon in the right sidebar
+3. Authorize the requested permissions (Gmail current-message read, message action, message metadata, external requests, and user email)
+4. Open Gmail — the **Phishing Checker** shield icon appears in the right sidebar
 
 ### Step 7: Analyze Your First Email
 
 1. Open any email in Gmail
 2. Click the **Phishing Checker** icon in the right sidebar
-3. Click **Analyze This Email**
-4. Wait ~5 seconds — the results card appears with:
-   - **Verdict**: SAFE / SUSPICIOUS / PHISHING
-   - **Score**: 0–100
-   - **Confidence**: how certain the AI is
-   - **Red Flags**: specific issues detected (category, severity, description)
-
----
-
-## Python Backend — Setup Guide
-
-The Python backend automates everything. It watches your inbox 24/7 via Google Cloud Pub/Sub push notifications and labels + alerts you without any manual action.
-
-### Prerequisites
-
-- Python 3.11+
-- A Google Cloud Platform (GCP) project
-- One AI provider credential (Azure OpenAI or Amazon Bedrock)
-- A public HTTPS URL for the webhook (use [ngrok](https://ngrok.com) for local dev)
-
-### Step 1: Set Up Google Cloud Platform
-
-#### 1.1 Create a GCP Project
-
-1. Go to [console.cloud.google.com](https://console.cloud.google.com)
-2. Click the project selector at the top → **New Project**
-3. Name it `gmail-phishing-checker` → **Create**
-4. Note your **Project ID**
-
-#### 1.2 Enable Required APIs
-
-Enable both of these in your GCP project:
-
-- **Gmail API**: search "Gmail API" in the [API Library](https://console.cloud.google.com/apis/library) → **Enable**
-- **Cloud Pub/Sub API**: search "Cloud Pub/Sub" → **Enable**
-
-#### 1.3 Create OAuth 2.0 Credentials
-
-1. Go to **APIs & Services → Credentials → + Create Credentials → OAuth client ID**
-2. Configure the OAuth consent screen first if prompted:
-   - User type: **External**
-   - App name: `Gmail Phishing Checker`
-   - Add your Gmail as a test user
-   - Scopes: `gmail.modify`, `gmail.send`
-3. Application type: **Desktop app** → **Create**
-4. Click **Download JSON** → save as `credentials.json` in the project root
-5. **NEVER commit `credentials.json`** (it's in `.gitignore`)
-
-![GCP OAuth Screenshot](docs/screenshots/gcp_oauth_credentials.png)
-
-#### 1.4 Create a Pub/Sub Topic
-
-```bash
-gcloud config set project YOUR_PROJECT_ID
-gcloud pubsub topics create gmail-notifications
-```
-
-#### 1.5 Grant Gmail Push Permission
-
-```bash
-gcloud pubsub topics add-iam-policy-binding gmail-notifications \
-  --member="serviceAccount:gmail-api-push@system.gserviceaccount.com" \
-  --role="roles/pubsub.publisher"
-```
-
-#### 1.6 Create a Push Subscription
-
-```bash
-gcloud pubsub subscriptions create gmail-notifications-sub \
-  --topic=gmail-notifications \
-  --push-endpoint=https://YOUR_WEBHOOK_URL/pubsub?token=YOUR_SECRET_TOKEN \
-  --ack-deadline=30
-```
-
-Replace `YOUR_WEBHOOK_URL` with your public HTTPS URL (see ngrok below) and `YOUR_SECRET_TOKEN` with a random string you'll also put in `.env`.
-
-![GCP Pub/Sub Screenshot](docs/screenshots/gcp_pubsub_topic.png)
-
-### Step 2: Set Up ngrok (Local Development)
-
-```bash
-# Install ngrok from https://ngrok.com/download
-ngrok http 8080
-```
-
-Copy the `https://xxxx.ngrok-free.app` URL. Update your Pub/Sub subscription whenever your ngrok URL changes:
-
-```bash
-gcloud pubsub subscriptions modify-push-config gmail-notifications-sub \
-  --push-endpoint=https://xxxx.ngrok-free.app/pubsub?token=YOUR_SECRET_TOKEN
-```
-
-### Step 3: Install and Configure
-
-```bash
-# Create virtual environment
-python -m venv venv
-
-# Activate (Windows)
-venv\Scripts\activate
-# Activate (Mac/Linux)
-source venv/bin/activate
-
-# Install dependencies
-pip install -r requirements.txt
-
-# Copy environment template
-cp .env.example .env
-```
-
-Edit `.env` with your values:
-
-```env
-AI_PROVIDER=bedrock_claude     # azure_openai | bedrock_claude
-
-# Amazon Bedrock
-AWS_REGION=us-east-1
-AWS_ACCESS_KEY_ID=your-access-key
-AWS_SECRET_ACCESS_KEY=your-secret-key
-BEDROCK_MODEL_ID=us.anthropic.claude-haiku-4-5-20251001-v1:0
-
-# OR Azure OpenAI
-# AZURE_OPENAI_ENDPOINT=https://your-resource.openai.azure.com/
-# AZURE_OPENAI_API_KEY=your-key
-# AZURE_OPENAI_DEPLOYMENT=gpt-4o
-# AZURE_OPENAI_API_VERSION=2024-10-21
-
-# Google Cloud
-GCP_PROJECT_ID=your-gcp-project-id
-PUBSUB_TOPIC=gmail-notifications
-PUBSUB_VERIFICATION_TOKEN=your-secret-token
-
-# Server
-WEBHOOK_HOST=0.0.0.0
-WEBHOOK_PORT=8080
-SEND_WARNING_EMAIL=true
-```
-
-### Step 4: First Run (OAuth Consent)
-
-```bash
-python main.py
-```
-
-A browser window opens asking you to authorize Gmail access. This happens **once** — the token is saved to `token.json` and reused automatically.
-
-After authorization, you'll see:
-
-```
-INFO | main | Starting Gmail Phishing Checker...
-INFO | main | AI provider: bedrock_claude
-INFO | gmail.labels | Label 'PHISHING_DETECTED' created (red)
-INFO | gmail.labels | Label 'SUSPICIOUS' created (orange)
-INFO | gmail.client | Gmail watch established. Expires at: ...
-INFO | main | Webhook server starting on 0.0.0.0:8080 ...
-```
-
-Now any incoming email is analyzed automatically. Phishing emails get labeled + you receive a warning email.
+3. Click **Analyze for Phishing**
+4. Wait a few seconds — the results card appears with verdict, score, confidence, and red flags
 
 ---
 
@@ -361,18 +207,16 @@ Now any incoming email is analyzed automatically. Phishing emails get labeled + 
 
 ### Switching Providers
 
-**Gmail Add-on:** Change the `AI_PROVIDER` Script Property in Apps Script → Project Settings → Script Properties.
-
-**Python backend:** Change `AI_PROVIDER` in your `.env` file and restart.
+Change the `AI_PROVIDER` Script Property in Apps Script → Project Settings → Script Properties. No code change required.
 
 ### Provider Comparison
 
 | Provider | Best For | Notes |
 |---|---|---|
-| **Gemini API** | Quick start, free tier | Get key at [aistudio.google.com](https://aistudio.google.com). Add-on default. |
-| **Vertex AI** | GCP-native, no API key mgmt | Requires GCP project with Vertex AI enabled. Uses your Google OAuth token. |
+| **Gemini API** | Quick start, free tier | Get key at [aistudio.google.com](https://aistudio.google.com). |
+| **Vertex AI** | GCP-native, no API key mgmt | Requires GCP project with Vertex AI enabled. Uses Apps Script OAuth token. |
+| **Bedrock Claude** | Claude-quality output, AWS-native | Bearer-token Bedrock API key OR legacy IAM SigV4. Use inference profile IDs for Claude 4.x. |
 | **Azure OpenAI** | GPT-4o quality | Requires Azure subscription + deployed model. |
-| **Amazon Bedrock Claude** | Claude quality, AWS-native | Requires IAM user + Bedrock model access. Use inference profile IDs for Claude 4.x (`us.anthropic.claude-...`). |
 
 ### Bedrock Model IDs (Claude 4.x Inference Profiles)
 
@@ -388,22 +232,13 @@ Now any incoming email is analyzed automatically. Phishing emails get labeled + 
 
 ## Phishing Score Reference
 
-The AI scores every email 0–100 across 6 dimensions:
+The AI scores every email 0–100 across 6 dimensions (sender, URLs, urgency, grammar, impersonation, attachments).
 
-1. Sender legitimacy (domain reputation, spoofing indicators)
-2. URL analysis (redirects, lookalike domains, suspicious TLDs)
-3. Urgency and manipulation tactics (fear, pressure, deadlines)
-4. Grammar and language anomalies
-5. Impersonation indicators (brand spoofing, executive impersonation)
-6. Attachment risk signals
-
-| Score | Verdict | Action Taken |
+| Score | Verdict | Display |
 |---|---|---|
-| 0–30 | ✅ SAFE | No action |
-| 31–65 | ⚠️ SUSPICIOUS | Orange label + warning email (backend) |
-| 66–100 | 🚨 PHISHING | Red label + warning email (backend) |
-
-Thresholds are configurable via `SUSPICIOUS_THRESHOLD` and `PHISHING_THRESHOLD` in `.env` (Python backend only).
+| 0–30 | ✅ SAFE | Green badge, "No action needed" |
+| 31–65 | ⚠️ SUSPICIOUS | Orange badge, red-flags list |
+| 66–100 | 🚨 PHISHING | Red badge, red-flags list |
 
 ---
 
@@ -412,114 +247,64 @@ Thresholds are configurable via `SUSPICIOUS_THRESHOLD` and `PHISHING_THRESHOLD` 
 ```
 AI-Phishing-Detector/
 │
-├── addon/                          # Gmail Add-on (Google Apps Script)
+├── addon/                          # Gmail Add-on (Google Apps Script source)
 │   ├── appsscript.json             # Manifest: scopes, triggers, add-on metadata
-│   ├── Code.gs                     # Entry points: onGmailMessage, analyzeEmailAction
-│   ├── Card.gs                     # UI cards: Home, Results, Error, Settings
-│   ├── Config.gs                   # Script Properties reader + validation
+│   ├── Code.gs                     # Entry points: onGmailMessage, analyzeEmailAction, buildAddOn
+│   ├── Card.gs                     # UI cards: Home, Results, Error, Settings, AccessDenied
+│   ├── Config.gs                   # Script Properties + allowlist + validation
 │   ├── AIProvider.gs               # Provider factory + TEST_MODE mock
 │   ├── AzureOpenAI.gs              # Azure OpenAI REST implementation
-│   ├── BedrockClaude.gs            # Amazon Bedrock + AWS Sig V4 signing
+│   ├── BedrockClaude.gs            # Bedrock (Bearer + SigV4) implementation
 │   ├── GeminiAI.gs                 # Gemini API REST implementation
-│   ├── VertexAI.gs                 # Vertex AI (uses OAuth token, no svc account)
+│   ├── VertexAI.gs                 # Vertex AI (Apps Script OAuth token)
 │   ├── GmailHelper.gs              # Email fetch, header parsing, URL extraction
 │   ├── Models.gs                   # JSON response parsing + PhishingAnalysis model
 │   ├── Prompt.gs                   # System prompt + user prompt builder
-│   ├── Utils.gs                    # HMAC-SHA256, HTTP fetch, URL extraction
+│   ├── Utils.gs                    # HMAC-SHA256, HTTP fetch, sanitizers
 │   └── .clasp.json                 # clasp project link (set your scriptId here)
 │
-├── ai/                             # Python backend — AI providers
-│   ├── base.py                     # Abstract AIProvider base class
-│   ├── models.py                   # PhishingAnalysis Pydantic models
-│   ├── prompt.py                   # Phishing analysis prompts
-│   ├── azure_openai.py             # Azure OpenAI implementation
-│   ├── bedrock_claude.py           # Amazon Bedrock Claude (boto3)
-│   └── __init__.py                 # Provider factory: get_provider(config)
+├── docs/                           # GitHub Pages site (homepage, privacy, terms)
+│   ├── index.html
+│   ├── privacy.html
+│   ├── terms.html
+│   ├── style.css
+│   ├── PRIVACY.md
+│   ├── TERMS.md
+│   ├── MARKETPLACE_LISTING.md
+│   └── screenshots/                # UI screenshots
 │
-├── auth/
-│   └── gmail_oauth.py              # OAuth2 flow + token persistence + auto-refresh
+├── demo-emails/                    # Demo emails for testing the add-on
+│   ├── 01-phishing.html
+│   ├── 02-suspicious.html
+│   ├── 03-legitimate.html
+│   ├── SendDemoEmails.gs           # Apps Script helper to send the demo emails to yourself
+│   └── icon.svg                    # Add-on icon source
 │
-├── gmail/
-│   ├── client.py                   # Gmail API wrapper with tenacity retry
-│   ├── labels.py                   # PHISHING_DETECTED / SUSPICIOUS label management
-│   └── parser.py                   # Email extraction: sender, URLs, auth headers
-│
-├── pubsub/
-│   ├── webhook.py                  # Flask POST /pubsub endpoint
-│   └── handler.py                  # Full pipeline orchestrator
-│
-├── notifications/
-│   └── warning_email.py            # HTML + plain text warning email composer
-│
-├── tests/
-│   ├── conftest.py
-│   ├── test_config.py
-│   ├── test_gmail_parser.py
-│   ├── test_ai_prompt.py
-│   ├── test_pubsub_handler.py
-│   └── fixtures/
-│       ├── legitimate_email.json
-│       ├── phishing_email.json
-│       └── suspicious_email.json
-│
-├── docs/
-│   └── screenshots/                # UI screenshots referenced in this README
-│
-├── main.py                         # Entry point + watch renewal daemon
-├── config.py                       # Pydantic BaseSettings + per-provider validation
-├── requirements.txt
-├── .env.example                    # Environment variable template
+├── README.md
 └── .gitignore
 ```
 
 ---
 
-## Running Tests
-
-Tests cover the Python backend. All Gmail API and AI calls are mocked — no external services needed.
-
-```bash
-# Activate virtual environment first
-source venv/bin/activate   # Mac/Linux
-venv\Scripts\activate      # Windows
-
-pytest tests/ -v
-```
-
-Expected output: **37 tests passing**.
-
----
-
 ## Security Notes
 
-- `credentials.json`, `token.json`, and `.env` are in `.gitignore` — **never commit them**
 - Script Properties in Apps Script are encrypted at rest by Google — safe for API keys
-- Use a strong random string for `PUBSUB_VERIFICATION_TOKEN`
-- For production AWS, prefer IAM roles over long-lived access keys
-- For production webhook, use a proper TLS certificate (not ngrok)
-- The Vertex AI provider uses `ScriptApp.getOAuthToken()` (short-lived OAuth token) — no long-lived service account key stored anywhere
+- The add-on requests the minimum Gmail scopes needed: `gmail.addons.current.message.readonly`, `message.action`, `message.metadata`
+- Access is restricted to allowlisted users via `ALLOWED_USERS` — unlisted users get an access-denied card
+- The Vertex AI provider uses `ScriptApp.getOAuthToken()` (short-lived) — no long-lived service-account key is stored
+- All AI provider URLs are pinned in `appsscript.json → urlFetchWhitelist` — the add-on cannot make outbound requests to unexpected hosts
 
 ---
 
 ## Troubleshooting
 
-### Gmail Add-on
-
 | Symptom | Fix |
 |---|---|
-| "Missing Script Properties" error | Go to Project Settings → Script Properties, add all required keys for your provider |
-| Analysis times out | Switch to a faster model (Haiku, Gemini Flash) or reduce prompt size; Apps Script controls the card-action runtime limit |
-| Bedrock HTTP 400 "inference profile" error | Use inference profile ID format: `us.anthropic.claude-...` instead of bare model ID |
-| Add-on not appearing in Gmail | In Apps Script Editor → Deploy → Test deployments → Install the Gmail Add-on |
-
-### Python Backend
-
-| Symptom | Fix |
-|---|---|
-| `credentials.json` not found | Download it from GCP Console → APIs & Services → Credentials |
-| Pub/Sub not delivering | Ensure ngrok is running and the push endpoint URL is up to date |
-| Watch expired | The watch renewal daemon runs every 6 days automatically; restart `main.py` if it was stopped |
-| AI API errors | Check `.env` values; run `pytest tests/ -v` to validate config |
+| "Access denied" card | Add your Gmail address to the `ALLOWED_USERS` Script Property (comma-separated). |
+| "Missing Script Properties" error | Go to Project Settings → Script Properties, add all required keys for your active provider. |
+| Analysis times out | Switch to a faster model (Haiku, Gemini Flash). Apps Script controls the card-action runtime limit. |
+| Bedrock HTTP 400 "inference profile" error | Use inference profile ID format: `us.anthropic.claude-...` instead of the bare model ID. |
+| Add-on not appearing in Gmail | In Apps Script Editor → Deploy → Test deployments → Install the Gmail Add-on. Reload Gmail. |
 
 ---
 

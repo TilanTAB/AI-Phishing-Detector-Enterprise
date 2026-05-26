@@ -1,28 +1,6 @@
-# Python
-__pycache__/
-*.py[cod]
-*$py.class
-*.egg-info/
-dist/
-build/
-*.egg
-.eggs/
-
-# Virtual environment
-venv/
-.venv/
-env/
-
-# Environment variables & secrets
-.env
-credentials.json
-token.json
-
-# Application state
-history_state.json
-
-# Node
-node_modules/
+# clasp local credentials (do not commit your clasp login token)
+.clasprc.json
+addon/.clasprc.json
 
 # IDE
 .vscode/
@@ -37,13 +15,5 @@ node_modules/
 Thumbs.db
 .DS_Store
 
-# Testing
-.pytest_cache/
-.coverage
-htmlcov/
-
 # Logs
 *.log
-
-# Abandoned Outlook port — not pursued for this release
-outlook-addin/
