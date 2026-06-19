@@ -52,7 +52,13 @@ The add-on inspects:
 
 ## Setup Guide
 
-The add-on is meant to be deployed by a developer once. End users on the allowlist do not need to install or configure anything — they just need to be added to `ALLOWED_USERS`.
+The add-on is meant to be deployed once by a developer (single user / small team) or by a
+Workspace admin (whole org). End users do not install or configure anything — they just need
+an email in one of the `ALLOWED_DOMAINS`.
+
+> **Rolling it out to an entire organisation?** See the
+> [Admin Deployment Guide](docs/ADMIN_DEPLOYMENT.md) for the domain-wide private Marketplace
+> install flow.
 
 ### Prerequisites
 
@@ -119,7 +125,7 @@ appsscript.json
 
 ### Step 5: Configure Script Properties
 
-Script Properties are the add-on's environment variables — they hold your API keys, the active provider, and the user allowlist. **Never hardcode secrets in the source files.**
+Script Properties are the add-on's environment variables — they hold your API keys, the active provider, and the domain allowlist. **Never hardcode secrets in the source files.**
 
 1. In the Apps Script Editor, click the gear icon (**Project Settings**)
 2. Scroll down to **Script Properties**
@@ -130,7 +136,7 @@ Script Properties are the add-on's environment variables — they hold your API 
 | Property | Value | Description |
 |---|---|---|
 | `AI_PROVIDER` | `gemini` | Active AI provider. Options: `azure_openai`, `bedrock_claude`, `gemini`, `vertex_ai` |
-| `ALLOWED_USERS` | `you@example.com` | Comma-separated allowlist. Required — unlisted users get an access-denied card. |
+| `ALLOWED_DOMAINS` | `acme.com` | Comma-separated domain allowlist. Required — users outside these domains get an access-denied card. Never use a public domain like `gmail.com`. |
 
 #### Google Gemini API Provider
 
@@ -186,6 +192,7 @@ Two auth modes are supported. **Bedrock API key takes precedence** if both are s
 | Property | Default | Description |
 |---|---|---|
 | `TEST_MODE` | `false` | Set to `true` to return a mock result without calling any AI API (useful for UI testing) |
+| `RATE_LIMIT_PER_HOUR` | `20` | Max analyses per user per hour. Protects the shared provider key from runaway/abusive usage. |
 
 ### Step 6: Deploy as Gmail Add-on
 
@@ -251,7 +258,7 @@ AI-Phishing-Detector/
 │   ├── appsscript.json             # Manifest: scopes, triggers, add-on metadata
 │   ├── Code.gs                     # Entry points: onGmailMessage, analyzeEmailAction, buildAddOn
 │   ├── Card.gs                     # UI cards: Home, Results, Error, Settings, AccessDenied
-│   ├── Config.gs                   # Script Properties + allowlist + validation
+│   ├── Config.gs                   # Script Properties + domain allowlist + validation
 │   ├── AIProvider.gs               # Provider factory + TEST_MODE mock
 │   ├── AzureOpenAI.gs              # Azure OpenAI REST implementation
 │   ├── BedrockClaude.gs            # Bedrock (Bearer + SigV4) implementation
@@ -290,7 +297,8 @@ AI-Phishing-Detector/
 
 - Script Properties in Apps Script are encrypted at rest by Google — safe for API keys
 - The add-on requests the minimum Gmail scopes needed: `gmail.addons.current.message.readonly`, `message.action`, `message.metadata`
-- Access is restricted to allowlisted users via `ALLOWED_USERS` — unlisted users get an access-denied card
+- Access is restricted by domain via `ALLOWED_DOMAINS` (fail-closed — denies everyone if unset); users outside the allowed domains get an access-denied card
+- Per-user hourly rate limiting (`RATE_LIMIT_PER_HOUR`) protects the shared provider key from runaway or abusive usage
 - The Vertex AI provider uses `ScriptApp.getOAuthToken()` (short-lived) — no long-lived service-account key is stored
 - All AI provider URLs are pinned in `appsscript.json → urlFetchWhitelist` — the add-on cannot make outbound requests to unexpected hosts
 
@@ -300,7 +308,8 @@ AI-Phishing-Detector/
 
 | Symptom | Fix |
 |---|---|
-| "Access denied" card | Add your Gmail address to the `ALLOWED_USERS` Script Property (comma-separated). |
+| "Access denied" card | Add your email's domain to the `ALLOWED_DOMAINS` Script Property (comma-separated). |
+| "Hourly analysis limit reached" | You hit the per-user cap. Wait for the next hour, or raise `RATE_LIMIT_PER_HOUR`. |
 | "Missing Script Properties" error | Go to Project Settings → Script Properties, add all required keys for your active provider. |
 | Analysis times out | Switch to a faster model (Haiku, Gemini Flash). Apps Script controls the card-action runtime limit. |
 | Bedrock HTTP 400 "inference profile" error | Use inference profile ID format: `us.anthropic.claude-...` instead of the bare model ID. |

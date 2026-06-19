@@ -4,7 +4,7 @@ _Last updated: April 2, 2026_
 
 ## Access Restriction
 
-This add-on is **private and restricted to authorized users only**. Access is controlled via an allowlist. If your Google account is not on the allowlist, the add-on will display an "Access Restricted" message and will not process any email data. To request access, contact the developer at the support link below.
+This add-on is **restricted to authorised users only**. Access is controlled by a domain allowlist (`ALLOWED_DOMAINS`) configured by the deployment's administrator. If your account's domain is not authorised, the add-on will display an "Access Restricted" message and will not process any email data. To request access, contact your administrator (or the support link below).
 
 ## What This Add-on Does
 

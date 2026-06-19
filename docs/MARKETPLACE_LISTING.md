@@ -43,29 +43,29 @@ The add-on examines every email along six dimensions:
 
 ### Setup
 
-The add-on is configured per-installation by the developer (the owner of the Apps Script project). The developer sets up an AI provider in Apps Script Script Properties — choosing one of:
+The add-on is self-hosted and configured per-installation by whoever owns the Apps Script project — an individual developer for personal/small-team use, or a Google Workspace administrator for an org-wide rollout. They set up an AI provider in Apps Script Script Properties — choosing one of:
 
 - Amazon Bedrock Claude (Bedrock API key or AWS IAM credentials)
 - Google Gemini™
 - Google Vertex AI™
 - Azure OpenAI
 
-All allowlisted users share this single configuration. Per-user keys are not supported — to change provider or model, allowlisted users contact the developer. See the project README for the full setup walkthrough.
+Everyone in the organisation shares this single configuration. Per-user keys are not supported — to change provider or model, users contact their Workspace administrator. See the project README and the Admin Deployment Guide for the full setup walkthrough.
 
 ### Privacy
 
-- **Developer-administered AI provider** — the developer configures one AI provider in Apps Script Script Properties. All allowlisted users share this configuration. Email content goes directly from your Gmail to the configured provider — no middle-man server is in the data path.
-- **No data is stored anywhere we control.** The add-on processes email content in-memory and forwards it only to the AI provider the developer chose.
-- **Allowlist gating.** This is a private experimental add-on. Access is restricted to a specific allowlist of authorized Google accounts maintained by the developer. If your account is not on the allowlist, the add-on displays an "Access Restricted" message and processes nothing.
+- **Org-administered AI provider** — your Workspace administrator configures one AI provider in Apps Script Script Properties. Everyone in the organisation shares this configuration. Email content goes directly from your Gmail to the configured provider — no middle-man server is in the data path.
+- **No data is stored anywhere we control.** The add-on processes email content in-memory and forwards it only to the AI provider configured for the deployment.
+- **Domain gating.** Access is restricted to the organisation's authorised domains (`ALLOWED_DOMAINS`), configured by the Workspace administrator. If your account's domain is not authorised, the add-on displays an "Access Restricted" message and processes nothing. A per-user hourly rate limit protects the shared provider key from abuse.
 - **Open source.** Every line of code is publicly auditable.
 
 ### Who it is for
 
-This add-on is suitable for individuals and small teams who:
+This add-on is suitable for individuals, small teams, and organisations who:
 
 - Want a second opinion on suspicious emails without forwarding them to a security team
 - Prefer AI-powered analysis over hand-crafted rules
-- Are happy to share a single AI provider configuration administered by the developer
+- Are happy to share a single AI provider configuration administered by their developer or Workspace administrator
 - Need transparency about exactly what the analysis software is doing (open source)
 
 ### Privacy & Terms

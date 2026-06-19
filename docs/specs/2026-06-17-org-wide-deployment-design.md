@@ -84,7 +84,10 @@ Split into two units for testability, matching the existing pure-logic-test conv
   No network, no service calls. Covered by a new editor-runnable `test_rateLimit()` that
   logs `ALL PASSED`.
 - **Storage wrapper** using `CacheService.getUserCache()` with a fixed time window. Per-user
-  cache means **no shared-state races** and no `LockService`.
+  scope removes *cross-user* contention (no `LockService`), but the cap is **best-effort**:
+  the get/increment/put is non-atomic, so concurrent card actions from the *same* user can
+  lose an increment and slightly exceed the cap. Accepted — the goal is stopping sequential
+  runaway/abuse, and the domain gate bounds the blast radius to authorised org users.
 
 **Window = per hour (decided).** Constraint [Inferred — confirm against Apps Script docs
 in implementation]: `CacheService` maximum TTL is ~6 hours, so a 24h counter cannot live in a
