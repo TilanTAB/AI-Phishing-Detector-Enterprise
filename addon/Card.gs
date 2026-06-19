@@ -217,8 +217,8 @@ function buildAccessDeniedCard() {
           CardService.newTextParagraph()
             .setText(
               'Your account (<b>' + _escape(userEmail) + '</b>) ' +
-              'is not authorised to use this add-on.\n\n' +
-              'Contact the owner to request access.'
+              'is not in a domain authorised for this add-on.\n\n' +
+              'If you believe this is an error, contact your Google Workspace administrator.'
             )
         )
     )
@@ -269,6 +269,10 @@ function buildErrorCard(errorMessage, messageId) {
  * @returns {Card}
  */
 function buildSettingsCard() {
+  // Gate this entry point like the others (Code.gs onGmailMessage/buildAddOn/
+  // analyzeEmailAction): a user outside ALLOWED_DOMAINS should not see config.
+  if (!isAllowedUser()) return buildAccessDeniedCard();
+
   var card = CardService.newCardBuilder()
     .setHeader(CardService.newCardHeader()
       .setTitle('⚙ Settings')
@@ -291,13 +295,13 @@ function buildSettingsCard() {
   aboutSection.addWidget(
     CardService.newTextParagraph()
       .setText(
-        'The AI provider, model, and credentials are administered by the developer. ' +
-        'All allowlisted users share a single configuration; per-user keys are not supported.\n\n' +
-        'To request a change of provider or model, contact the developer at ' +
-        '<b>tilan.bethmage@gmail.com</b>.\n\n' +
-        'For setup instructions (only relevant if you have forked or are running your own ' +
-        'instance of this add-on), see the project README at ' +
-        '<a href="https://github.com/TilanTAB/AI-Phishing-Detector">github.com/TilanTAB/AI-Phishing-Detector</a>.'
+        'This add-on is administered by your organisation. The AI provider, model, ' +
+        'credentials, allowed domains, and rate limit are configured by your Workspace ' +
+        'administrator in Apps Script Script Properties — they are shared by everyone in ' +
+        'the organisation and are not user-editable.\n\n' +
+        'To request a change, contact your administrator.\n\n' +
+        'Self-hosting your own instance? See the deployment guide: ' +
+        '<a href="https://github.com/TilanTAB/AI-Phishing-Detector/blob/main/docs/ADMIN_DEPLOYMENT.md">ADMIN_DEPLOYMENT.md</a>.'
       )
   );
   card.addSection(aboutSection);

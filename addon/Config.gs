@@ -59,25 +59,73 @@ function getProvider() {
 }
 
 /**
- * Returns true if the current user is permitted to use the add-on.
+ * Pure domain-allowlist check. No Session/Properties calls — unit-testable.
+ * Matches the email's domain (substring after the LAST '@') against a
+ * comma-separated allowlist, case-insensitive, exact match (no subdomain wildcard).
+ * Fail-closed: empty/missing inputs return false.
  *
- * Reads ALLOWED_USERS from Script Properties (comma-separated emails).
- * If not set or empty, denies all users.
+ * @param {string} email
+ * @param {string} allowedDomainsCsv  e.g. "acme.com,acme.co.uk"
+ * @returns {boolean}
+ */
+function isDomainAllowed(email, allowedDomainsCsv) {
+  if (!email || !allowedDomainsCsv) return false;
+  var at = email.lastIndexOf('@');
+  if (at === -1) return false;
+  var domain = email.slice(at + 1).toLowerCase().trim();
+  if (!domain) return false;
+  return allowedDomainsCsv.split(',').some(function(d) {
+    return d.toLowerCase().trim() === domain;
+  });
+}
+
+/**
+ * Editor-runnable test for isDomainAllowed. No network.
+ * Run in the Apps Script editor; expect "test_domainAllowlist: ALL PASSED".
+ */
+function test_domainAllowlist() {
+  var cases = [
+    ['alice@acme.com',     'acme.com',            true],
+    ['alice@acme.com',     'acme.com,acme.co.uk', true],
+    ['bob@acme.co.uk',     'acme.com,acme.co.uk', true],
+    ['ALICE@ACME.COM',     'acme.com',            true],   // case-insensitive
+    ['alice@acme.com',     ' acme.com ',          true],   // trims config entry
+    ['alice@sub.acme.com', 'acme.com',            false],  // exact match only
+    ['alice@evil.com',     'acme.com',            false],
+    ['alice@acme.com',     '',                    false],  // fail-closed: empty
+    ['alice@acme.com',     null,                  false],  // fail-closed: unset
+    ['',                   'acme.com',            false],  // no email
+    ['notanemail',         'acme.com',            false]   // no '@'
+  ];
+  var failed = 0;
+  cases.forEach(function(c, i) {
+    var got = isDomainAllowed(c[0], c[1]);
+    if (got !== c[2]) {
+      failed++;
+      console.error('Case ' + i + ' FAILED: isDomainAllowed(' +
+        JSON.stringify(c[0]) + ', ' + JSON.stringify(c[1]) + ') = ' + got +
+        ', expected ' + c[2]);
+    }
+  });
+  if (failed === 0) console.log('test_domainAllowlist: ALL PASSED (' + cases.length + ' cases)');
+  else console.error('test_domainAllowlist: ' + failed + ' case(s) FAILED');
+}
+
+/**
+ * Returns true if the current user's email domain is in ALLOWED_DOMAINS.
+ *
+ * Reads ALLOWED_DOMAINS from Script Properties (comma-separated domains,
+ * e.g. "acme.com,acme.co.uk"). Fail-closed: if unset/empty, denies all users.
+ *
+ * NOTE: never set ALLOWED_DOMAINS to a public domain (gmail.com, outlook.com) —
+ * that would allow every consumer account that can reach the add-on.
  *
  * @returns {boolean}
  */
 function isAllowedUser() {
   var currentUser = getCurrentUserEmail();
   if (!currentUser) return false;
-
-  var allowedList = getProp('ALLOWED_USERS');
-  if (allowedList && allowedList.trim() !== '') {
-    return allowedList.split(',').some(function(email) {
-      return email.toLowerCase().trim() === currentUser;
-    });
-  }
-
-  return false;
+  return isDomainAllowed(currentUser, getProp('ALLOWED_DOMAINS'));
 }
 
 /**
@@ -148,5 +196,8 @@ function getSafeDisplayConfig() {
   safeKeys.forEach(function(key) {
     result[key] = getProp(key) || '(not set)';
   });
+  // Org-deployment settings (non-secret)
+  result.ALLOWED_DOMAINS = getProp('ALLOWED_DOMAINS') || '(not set — add-on denies everyone)';
+  result.RATE_LIMIT_PER_HOUR = String(getRateLimitPerHour());
   return result;
 }

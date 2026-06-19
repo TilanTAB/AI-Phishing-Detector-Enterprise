@@ -97,6 +97,20 @@ function analyzeEmailAction(e) {
   }
 
   try {
+    // Per-user hourly rate limit — protects the org's shared provider key.
+    // Placed after the messageId check so failed lookups don't consume quota.
+    var rl = checkAndConsumeRateLimit(getCurrentUserEmail());
+    if (!rl.allowed) {
+      console.log('Rate limit hit | id=' + messageId);
+      return CardService.newActionResponseBuilder()
+        .setNotification(
+          CardService.newNotification().setText(
+            'Hourly analysis limit reached. Try again in ' + rl.resetMinutes + ' min.'
+          )
+        )
+        .build();
+    }
+
     // Fetch email data — pass access token for addon-scoped getMessageById
     var accessToken = e && e.gmail && e.gmail.accessToken;
     var emailData = getEmailData(messageId, accessToken);
