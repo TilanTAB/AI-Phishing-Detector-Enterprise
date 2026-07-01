@@ -80,8 +80,8 @@ clasp login
 ### Step 2: Clone This Repo
 
 ```bash
-git clone https://github.com/TilanTAB/AI-Phishing-Detector.git
-cd AI-Phishing-Detector
+git clone https://github.com/TilanTAB/AI-Phishing-Detector-Enterprise.git
+cd AI-Phishing-Detector-Enterprise
 ```
 
 ### Step 3: Create an Apps Script Project

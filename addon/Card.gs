@@ -301,7 +301,7 @@ function buildSettingsCard() {
         'the organisation and are not user-editable.\n\n' +
         'To request a change, contact your administrator.\n\n' +
         'Self-hosting your own instance? See the deployment guide: ' +
-        '<a href="https://github.com/TilanTAB/AI-Phishing-Detector/blob/main/docs/ADMIN_DEPLOYMENT.md">ADMIN_DEPLOYMENT.md</a>.'
+        '<a href="https://github.com/TilanTAB/AI-Phishing-Detector-Enterprise/blob/main/docs/ADMIN_DEPLOYMENT.md">ADMIN_DEPLOYMENT.md</a>.'
       )
   );
   card.addSection(aboutSection);

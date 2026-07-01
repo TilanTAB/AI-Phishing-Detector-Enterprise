@@ -51,4 +51,4 @@ This add-on does not use any analytics, tracking pixels, or telemetry of any kin
 ## Contact
 
 For questions or concerns, open an issue at:
-https://github.com/TilanTAB/AI-Phishing-Detector/issues
+https://github.com/TilanTAB/AI-Phishing-Detector-Enterprise/issues
